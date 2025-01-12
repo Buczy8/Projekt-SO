@@ -1,0 +1,4 @@
+/home/pawel/projekt/stadion/cmake-build-debug/CMakeFiles/fan.dir
+/home/pawel/projekt/stadion/cmake-build-debug/CMakeFiles/technical_worker.dir
+/home/pawel/projekt/stadion/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/pawel/projekt/stadion/cmake-build-debug/CMakeFiles/rebuild_cache.dir

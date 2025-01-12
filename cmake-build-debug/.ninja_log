@@ -1,0 +1,14 @@
+# ninja log v6
+1	15	1736719633981857711	build.ninja	953051feee303170
+1	27	1736719377571385379	CMakeFiles/technical_worker.dir/technical_worker.c.o	47f23f79afd661b0
+0	27	1736719389046385204	CMakeFiles/fan.dir/fan.c.o	9a25115602051dfe
+1	44	1736719380352385335	CMakeFiles/fan.dir/resources.c.o	4baeb5bd0936c5d1
+27	120	1736719389064385205	bin/fan	e932daf9a4d1dfab
+27	90	1736719377598385379	bin/technical_worker	2fdb8c284131f951
+2	70	1736719346913369277	CMakeFiles/technical_worker.dir/resources.c.o	96b50c59f65237c
+1	32	1736719748798503295	CMakeFiles/technical_worker.dir/src/technical_worker.c.o	6564d1c72a123a6c
+1	40	1736719748798503295	CMakeFiles/technical_worker.dir/src/resources.c.o	eaa65e37815e5ff6
+40	116	1736719748834503295	bin/technical_worker	d88db30c8dba44fb
+1	37	1736719751876503238	CMakeFiles/fan.dir/src/fan.c.o	c2a343ec6f51b179
+1	38	1736719751876503238	CMakeFiles/fan.dir/src/resources.c.o	5f1a9d84e491a458
+38	81	1736719751912503240	bin/fan	eea62d9201b96689

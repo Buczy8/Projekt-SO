@@ -41,82 +41,114 @@ include CMakeFiles/rules.ninja
 
 cmake_ninja_workdir = /home/pawel/projekt/stadion/cmake-build-debug/
 # =============================================================================
-# Object build statements for EXECUTABLE target fan
+# Object build statements for EXECUTABLE target kibic
 
 
 #############################################
-# Order-only phony target for fan
+# Order-only phony target for kibic
 
-build cmake_object_order_depends_target_fan: phony || .
+build cmake_object_order_depends_target_kibic: phony || .
 
-build CMakeFiles/fan.dir/src/fan.c.o: C_COMPILER__fan_unscanned_Debug /home/pawel/projekt/stadion/src/fan.c || cmake_object_order_depends_target_fan
-  DEP_FILE = CMakeFiles/fan.dir/src/fan.c.o.d
+build CMakeFiles/kibic.dir/src/kibic.c.o: C_COMPILER__kibic_unscanned_Debug /home/pawel/projekt/stadion/src/kibic.c || cmake_object_order_depends_target_kibic
+  DEP_FILE = CMakeFiles/kibic.dir/src/kibic.c.o.d
   FLAGS = -g -std=gnu2x -fdiagnostics-color=always
   INCLUDES = -I/home/pawel/projekt/stadion/include
-  OBJECT_DIR = CMakeFiles/fan.dir
-  OBJECT_FILE_DIR = CMakeFiles/fan.dir/src
+  OBJECT_DIR = CMakeFiles/kibic.dir
+  OBJECT_FILE_DIR = CMakeFiles/kibic.dir/src
 
-build CMakeFiles/fan.dir/src/resources.c.o: C_COMPILER__fan_unscanned_Debug /home/pawel/projekt/stadion/src/resources.c || cmake_object_order_depends_target_fan
-  DEP_FILE = CMakeFiles/fan.dir/src/resources.c.o.d
+build CMakeFiles/kibic.dir/src/resources.c.o: C_COMPILER__kibic_unscanned_Debug /home/pawel/projekt/stadion/src/resources.c || cmake_object_order_depends_target_kibic
+  DEP_FILE = CMakeFiles/kibic.dir/src/resources.c.o.d
   FLAGS = -g -std=gnu2x -fdiagnostics-color=always
   INCLUDES = -I/home/pawel/projekt/stadion/include
-  OBJECT_DIR = CMakeFiles/fan.dir
-  OBJECT_FILE_DIR = CMakeFiles/fan.dir/src
+  OBJECT_DIR = CMakeFiles/kibic.dir
+  OBJECT_FILE_DIR = CMakeFiles/kibic.dir/src
 
 
 # =============================================================================
-# Link build statements for EXECUTABLE target fan
+# Link build statements for EXECUTABLE target kibic
 
 
 #############################################
-# Link the executable bin/fan
+# Link the executable bin/kibic
 
-build bin/fan: C_EXECUTABLE_LINKER__fan_Debug CMakeFiles/fan.dir/src/fan.c.o CMakeFiles/fan.dir/src/resources.c.o
+build bin/kibic: C_EXECUTABLE_LINKER__kibic_Debug CMakeFiles/kibic.dir/src/kibic.c.o CMakeFiles/kibic.dir/src/resources.c.o
   FLAGS = -g
-  OBJECT_DIR = CMakeFiles/fan.dir
+  OBJECT_DIR = CMakeFiles/kibic.dir
   POST_BUILD = :
   PRE_LINK = :
-  TARGET_FILE = bin/fan
-  TARGET_PDB = fan.dbg
+  TARGET_FILE = bin/kibic
+  TARGET_PDB = kibic.dbg
 
 # =============================================================================
-# Object build statements for EXECUTABLE target technical_worker
+# Object build statements for EXECUTABLE target pracownik_techniczny
 
 
 #############################################
-# Order-only phony target for technical_worker
+# Order-only phony target for pracownik_techniczny
 
-build cmake_object_order_depends_target_technical_worker: phony || .
+build cmake_object_order_depends_target_pracownik_techniczny: phony || .
 
-build CMakeFiles/technical_worker.dir/src/technical_worker.c.o: C_COMPILER__technical_worker_unscanned_Debug /home/pawel/projekt/stadion/src/technical_worker.c || cmake_object_order_depends_target_technical_worker
-  DEP_FILE = CMakeFiles/technical_worker.dir/src/technical_worker.c.o.d
+build CMakeFiles/pracownik_techniczny.dir/src/pracownik_techniczny.c.o: C_COMPILER__pracownik_techniczny_unscanned_Debug /home/pawel/projekt/stadion/src/pracownik_techniczny.c || cmake_object_order_depends_target_pracownik_techniczny
+  DEP_FILE = CMakeFiles/pracownik_techniczny.dir/src/pracownik_techniczny.c.o.d
   FLAGS = -g -std=gnu2x -fdiagnostics-color=always
   INCLUDES = -I/home/pawel/projekt/stadion/include
-  OBJECT_DIR = CMakeFiles/technical_worker.dir
-  OBJECT_FILE_DIR = CMakeFiles/technical_worker.dir/src
+  OBJECT_DIR = CMakeFiles/pracownik_techniczny.dir
+  OBJECT_FILE_DIR = CMakeFiles/pracownik_techniczny.dir/src
 
-build CMakeFiles/technical_worker.dir/src/resources.c.o: C_COMPILER__technical_worker_unscanned_Debug /home/pawel/projekt/stadion/src/resources.c || cmake_object_order_depends_target_technical_worker
-  DEP_FILE = CMakeFiles/technical_worker.dir/src/resources.c.o.d
+build CMakeFiles/pracownik_techniczny.dir/src/resources.c.o: C_COMPILER__pracownik_techniczny_unscanned_Debug /home/pawel/projekt/stadion/src/resources.c || cmake_object_order_depends_target_pracownik_techniczny
+  DEP_FILE = CMakeFiles/pracownik_techniczny.dir/src/resources.c.o.d
   FLAGS = -g -std=gnu2x -fdiagnostics-color=always
   INCLUDES = -I/home/pawel/projekt/stadion/include
-  OBJECT_DIR = CMakeFiles/technical_worker.dir
-  OBJECT_FILE_DIR = CMakeFiles/technical_worker.dir/src
+  OBJECT_DIR = CMakeFiles/pracownik_techniczny.dir
+  OBJECT_FILE_DIR = CMakeFiles/pracownik_techniczny.dir/src
 
 
 # =============================================================================
-# Link build statements for EXECUTABLE target technical_worker
+# Link build statements for EXECUTABLE target pracownik_techniczny
 
 
 #############################################
-# Link the executable bin/technical_worker
+# Link the executable bin/pracownik_techniczny
 
-build bin/technical_worker: C_EXECUTABLE_LINKER__technical_worker_Debug CMakeFiles/technical_worker.dir/src/technical_worker.c.o CMakeFiles/technical_worker.dir/src/resources.c.o
+build bin/pracownik_techniczny: C_EXECUTABLE_LINKER__pracownik_techniczny_Debug CMakeFiles/pracownik_techniczny.dir/src/pracownik_techniczny.c.o CMakeFiles/pracownik_techniczny.dir/src/resources.c.o
   FLAGS = -g
-  OBJECT_DIR = CMakeFiles/technical_worker.dir
+  OBJECT_DIR = CMakeFiles/pracownik_techniczny.dir
   POST_BUILD = :
   PRE_LINK = :
-  TARGET_FILE = bin/technical_worker
-  TARGET_PDB = technical_worker.dbg
+  TARGET_FILE = bin/pracownik_techniczny
+  TARGET_PDB = pracownik_techniczny.dbg
+
+# =============================================================================
+# Object build statements for EXECUTABLE target kierownik_stadionu
+
+
+#############################################
+# Order-only phony target for kierownik_stadionu
+
+build cmake_object_order_depends_target_kierownik_stadionu: phony || .
+
+build CMakeFiles/kierownik_stadionu.dir/src/kierownik_stadionu.c.o: C_COMPILER__kierownik_stadionu_unscanned_Debug /home/pawel/projekt/stadion/src/kierownik_stadionu.c || cmake_object_order_depends_target_kierownik_stadionu
+  DEP_FILE = CMakeFiles/kierownik_stadionu.dir/src/kierownik_stadionu.c.o.d
+  FLAGS = -g -std=gnu2x -fdiagnostics-color=always
+  INCLUDES = -I/home/pawel/projekt/stadion/include
+  OBJECT_DIR = CMakeFiles/kierownik_stadionu.dir
+  OBJECT_FILE_DIR = CMakeFiles/kierownik_stadionu.dir/src
+
+
+# =============================================================================
+# Link build statements for EXECUTABLE target kierownik_stadionu
+
+
+#############################################
+# Link the executable bin/kierownik_stadionu
+
+build bin/kierownik_stadionu: C_EXECUTABLE_LINKER__kierownik_stadionu_Debug CMakeFiles/kierownik_stadionu.dir/src/kierownik_stadionu.c.o
+  FLAGS = -g
+  OBJECT_DIR = CMakeFiles/kierownik_stadionu.dir
+  POST_BUILD = :
+  PRE_LINK = :
+  TARGET_FILE = bin/kierownik_stadionu
+  TARGET_PDB = kierownik_stadionu.dbg
 
 
 #############################################
@@ -144,9 +176,11 @@ build rebuild_cache: phony CMakeFiles/rebuild_cache.util
 # =============================================================================
 # Target aliases.
 
-build fan: phony bin/fan
+build kibic: phony bin/kibic
 
-build technical_worker: phony bin/technical_worker
+build kierownik_stadionu: phony bin/kierownik_stadionu
+
+build pracownik_techniczny: phony bin/pracownik_techniczny
 
 # =============================================================================
 # Folder targets.
@@ -156,7 +190,7 @@ build technical_worker: phony bin/technical_worker
 #############################################
 # Folder: /home/pawel/projekt/stadion/cmake-build-debug
 
-build all: phony bin/fan bin/technical_worker
+build all: phony bin/kibic bin/pracownik_techniczny bin/kierownik_stadionu
 
 # =============================================================================
 # Built-in targets

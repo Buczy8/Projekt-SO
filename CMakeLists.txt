@@ -7,5 +7,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 include_directories(include)
 
-add_executable(fan src/fan.c src/resources.c)
-add_executable(technical_worker src/technical_worker.c src/resources.c)
+add_executable(kibic src/kibic.c src/resources.c)
+add_executable(pracownik_techniczny src/pracownik_techniczny.c src/resources.c)
+add_executable(kierownik_stadionu src/kierownik_stadionu.c)

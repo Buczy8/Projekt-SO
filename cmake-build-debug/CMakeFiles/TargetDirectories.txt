@@ -1,4 +1,5 @@
-/home/pawel/projekt/stadion/cmake-build-debug/CMakeFiles/fan.dir
-/home/pawel/projekt/stadion/cmake-build-debug/CMakeFiles/technical_worker.dir
+/home/pawel/projekt/stadion/cmake-build-debug/CMakeFiles/kibic.dir
+/home/pawel/projekt/stadion/cmake-build-debug/CMakeFiles/pracownik_techniczny.dir
+/home/pawel/projekt/stadion/cmake-build-debug/CMakeFiles/kierownik_stadionu.dir
 /home/pawel/projekt/stadion/cmake-build-debug/CMakeFiles/edit_cache.dir
 /home/pawel/projekt/stadion/cmake-build-debug/CMakeFiles/rebuild_cache.dir

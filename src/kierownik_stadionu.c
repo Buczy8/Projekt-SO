@@ -34,14 +34,16 @@ int main() {
         int result = -1;
         switch (signal) {
             case SIGNAL_STOP:
-                result = kill(PID_worker, SIGUSR1); // pracownik techniczny wstzymauje wpuszczenie kibicow na stadion(sygnal1)
-            break;
+                result = kill(PID_worker, SIGUSR1);
+            // pracownik techniczny wstzymauje wpuszczenie kibicow na stadion(sygnal1)
+                break;
             case SIGNAL_RESUME:
-                result = kill(PID_worker, SIGUSR2); // pracownik techniczny wznawia wpuszczanie kibiców na stadion (sygnal2)
-            break;
+                result = kill(PID_worker, SIGUSR2);
+            // pracownik techniczny wznawia wpuszczanie kibiców na stadion (sygnal2)
+                break;
             case SIGNAL_EVACUATE:
                 result = kill(PID_worker, SIGINT); // wszyscy kibice opszuczaja stadion (koniec symulacji) (sygnal3)
-            break;
+                break;
         }
 
         if (result == -1) {
@@ -59,6 +61,7 @@ int main() {
     recive_end_message();
     return 0;
 }
+
 void print_menu() {
     printf("Program Kierownika Stadionu\n");
     printf("Dostępne sygnały:\n");
@@ -66,6 +69,7 @@ void print_menu() {
     printf(" 2 - Wznowienie wpuszczania kibiców (SIGUSR2)\n");
     printf(" 3 - Ewakuacja stadionu (SIGINT)\n");
 }
+
 int recive_PID_message() {
     // Otwórz FIFO do odczytu
     int fifo_fd = open(FIFO_NAME, O_RDONLY);
@@ -86,6 +90,7 @@ int recive_PID_message() {
     close(fifo_fd);
     return pid;
 }
+
 void recive_end_message() {
     // otweranie potoku nazwanego
     int fifo_fd = open(FIFO_NAME, O_RDONLY);

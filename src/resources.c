@@ -3,49 +3,47 @@
 //
 #include "resources.h"
 
-int allocate_semaphore(key_t key, int number){
+int allocate_semaphore(key_t key, int number) {
     int semID;
-    if ( (semID = semget(key, number, IPC_CREAT | 0600)) == -1)
-    {
+    if ((semID = semget(key, number, IPC_CREAT | 0600)) == -1) {
         perror("semaphore initialization error (semget) ");
         exit(1);
     }
     return semID;
 }
 
-void initialize_semaphore(int sem_ID, int number, int val){
-    if ( semctl(sem_ID, number, SETVAL, val) == -1 )
-    {
+void initialize_semaphore(int sem_ID, int number, int val) {
+    if (semctl(sem_ID, number, SETVAL, val) == -1) {
         perror("semphore initialization error (semctl) ");
         exit(1);
     }
 }
 
-int signal_semaphore(int sem_ID, int number){
+int signal_semaphore(int sem_ID, int number) {
     struct sembuf operation[1];
     operation[0].sem_num = number;
     operation[0].sem_op = 1;
     operation[0].sem_flg = 0; //SEM_UNDO;
 
-    if (semop(sem_ID, operation, 1) == -1 )
+    if (semop(sem_ID, operation, 1) == -1)
         perror("semaphore signal error (semop) ");
     return 0;
 }
 
-int wait_semaphore(int sem_ID, int number, int flags){
+int wait_semaphore(int sem_ID, int number, int flags) {
     int id;
     struct sembuf operation[1];
     operation[0].sem_num = number;
     operation[0].sem_op = -1;
-    operation[0].sem_flg = 0 | flags;//SEM_UNDO;
+    operation[0].sem_flg = 0 | flags; //SEM_UNDO;
 
-    if ( id = semop(sem_ID, operation, 1) == -1 )
+    if (id = semop(sem_ID, operation, 1) == -1)
         perror("semaphore wait error (semop) ");
     else
         return 0;
 }
 
-int value_semaphore(int sem_ID, int number){
+int value_semaphore(int sem_ID, int number) {
     int value;
     value = semctl(sem_ID, number, GETVAL, NULL);
     if (value == -1) {
@@ -54,9 +52,10 @@ int value_semaphore(int sem_ID, int number){
     }
     return value;
 }
-int release_semaphore(int sem_ID, int number){
+
+int release_semaphore(int sem_ID, int number) {
     int id;
-    id =  semctl(sem_ID, number, IPC_RMID, NULL);
+    id = semctl(sem_ID, number, IPC_RMID, NULL);
     if (id == -1) {
         perror("releasing shered memory error (shmctl)");
         exit(1);
@@ -64,7 +63,7 @@ int release_semaphore(int sem_ID, int number){
     return id;
 }
 
-key_t initialize_key(int name){
+key_t initialize_key(int name) {
     key_t key;
     if ((key = ftok(".", name)) == -1) {
         printf("Blad ftok \n");
@@ -73,7 +72,7 @@ key_t initialize_key(int name){
     return key;
 }
 
-int initialize_message_queue(key_t key){
+int initialize_message_queue(key_t key) {
     int msg_ID = msgget(key, IPC_CREAT | 0600);
     if (msg_ID == -1) {
         perror("Message queue initialization error (msgget)");
@@ -81,19 +80,21 @@ int initialize_message_queue(key_t key){
     }
     return msg_ID;
 }
-void send_message(int msg_ID, struct bufor* message){
-    if(msgsnd(msg_ID, message, sizeof(message->mvalue), 0)==-1){
+
+void send_message(int msg_ID, struct bufor *message) {
+    if (msgsnd(msg_ID, message, sizeof(message->mvalue), 0) == -1) {
         perror("sending message error (msgsnd)");
         exit(1);
     }
-
 }
-void receive_message(int msg_ID, struct bufor* message, int mtype) {
+
+void receive_message(int msg_ID, struct bufor *message, int mtype) {
     if (msgrcv(msg_ID, message, sizeof(message->mvalue), mtype, 0) == -1) {
         perror("receiving message error");
         exit(1);
     }
 }
+
 int release_message_queue(int msg_ID) {
     int id = msgctl(msg_ID, IPC_RMID, NULL);
     if (id == -1) {
@@ -101,17 +102,17 @@ int release_message_queue(int msg_ID) {
         exit(1);
     }
     return id;
-
 }
-int initialize_shared_memory(key_t key, int size){
+
+int initialize_shared_memory(key_t key, int size) {
     int shm_ID = shmget(key, size, IPC_CREAT | 0600);
-    if(shm_ID == -1){
+    if (shm_ID == -1) {
         perror("initialize shered memory error");
         exit(1);
     }
-
 }
-int release_shared_memory(int shm_ID){
+
+int release_shared_memory(int shm_ID) {
     int id;
     id = shmctl(shm_ID, IPC_RMID, NULL);
     if (id == -1) {
@@ -120,7 +121,8 @@ int release_shared_memory(int shm_ID){
     }
     return id;
 }
-int detach_shared_memory(const void *addr){
+
+int detach_shared_memory(const void *addr) {
     int id;
     id = shmdt(addr);
     if (id == -1) {

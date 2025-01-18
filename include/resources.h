@@ -28,42 +28,57 @@
 #define TEAM_A 0
 #define TEAM_B 1
 
+#define IN 1
+#define OUT 0
+
 #define VIP (K * 0.005) // szansa na zostanie kibicem VIP
 
 // struktura opisujaca kibica
 struct Fan {
     int id; // id kibica
-    int station; // stanowisko na ktorym jest kontrolowany
     int team; // 0 - drużyna A, 1 - druzyna B
-   // bool dangerous_item; // posiadanie niebezpiecznego przedmiotu
+    bool dangerous_item; // posiadanie niebezpiecznego przedmiotu
     int is_vip; // status VIP
 };
+
 struct Station {
-    int fans_count;  // Liczba kibiców na stanowisku
+    int fans_count; // Liczba kibiców na stanowisku
 };
+
 //operacje semaforowe
 int allocate_semaphore(key_t key, int number);
+
 void initialize_semaphore(int sem_ID, int number, int val);
+
 int signal_semaphore(int sem_ID, int number);
+
 int wait_semaphore(int sem_ID, int number, int flags);
+
 int value_semaphore(int sem_ID, int number);
+
 int release_semaphore(int sem_ID, int number);
 
 key_t initialize_key(int name);
 
 
 //operaceje na kolejce komunikatów
-struct bufor{
+struct bufor {
     long mtype;
     int mvalue;
 };
+
 int initialize_message_queue(key_t key_ID);
-void send_message(int msg_ID, struct bufor* message);
-void receive_message(int msg_ID, struct bufor* message, int mtype);
+
+void send_message(int msg_ID, struct bufor *message);
+
+void receive_message(int msg_ID, struct bufor *message, int mtype);
+
 int release_message_queue(int msg_ID);
 
 //operacje na pamięci dzielonej
 int initialize_shared_memory(key_t key, int size);
+
 int release_shared_memory(int shm_ID);
+
 int detach_shared_memory(const void *addr);
 #endif //RESOURCES_H

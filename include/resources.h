@@ -23,9 +23,9 @@
 #define FIFO_NAME "FIFO" // nazwa pliku do potoku nazwanego FIFO
 #define NUM_STATIONS 3  // ilosc stanowiski do kontroli kibicow
 #define MAX_NUM_FANS 3 // maksymalna ilosc kibicow na jednym stanowisku do kontroli
-#define K 100 // maksymalna ilosc kibicow ktorzy moga przebywac na stadionie
+#define K 10 // maksymalna ilosc kibicow ktorzy moga przebywac na stadionie
 // podzial na druzyny
-#define TEAM_A 0
+#define TEAM_A 2
 #define TEAM_B 1
 
 #define IN 1
@@ -41,8 +41,9 @@ struct Fan {
     int is_vip; // status VIP
 };
 
-struct Station {
-    int fans_count; // Liczba kibiców na stanowisku
+struct Stadium {
+    int fans; // ilosc kibicow na stadionie
+    int station_status[NUM_STATIONS]; // Tablica statusow stanowisk (0 - wolne, TEAM_A/TEAM_B - zajęte)
 };
 
 //operacje semaforowe

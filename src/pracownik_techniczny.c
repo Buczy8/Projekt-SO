@@ -16,19 +16,53 @@ void send_end_message(); // funkcja wysylajaca wiadomosc koncowa do kierownika s
 void signal_handler(int sig); // funkcja obsługujaca poszczegolny sygnal
 void signal_handling(); // funkcja obslugujaca sygnaly od kierownika
 void creat_fan(); // funkcja tworzaca kibicow
-
+void initialize_resources();
+struct Stadium *stadium;
 
 int main() {
     send_PID_message(); // wyslanie PIDu procesu pracownika technicznego do kierownika stadionu
     signal_handling(); // // Rejestracja funkcji obsługi sygnałów
 
+    initialize_resources(); // inicjalizacja mechanizmow IPC
+
+    stadium->fans = 0; // ustawienie aktualnej ilosci kibiców na stadionie
+    for (int i = 0; i < NUM_STATIONS; i++) {
+        stadium->station_status[i] = 0;
+    }
+
+    // Główna pętla nasłuchująca sygnałów
+    while (!evacuation) {
+        wait_semaphore(sem2_id, 0, 0); // opuszczenie semafora zeby skorzystac z pamieci wspodzielonej
+        printf("Pracownik techniczny %d: Liczba kibiców na stadionie %d\n", getpid(), stadium->fans);
+        if (stadium->fans == K) {
+            stop_letting_in = 1; // koniec wpuszczania kibicow po osiagnieciu pozadanej ilosci (K)
+        }
+        signal_semaphore(sem2_id, 0); // zwolnienie semafora po uzyciu pamieci wspodzielonej
+        if (stop_letting_in) {
+            // Symulacja stanu "wstrzymano wpuszczanie"
+            sleep(100); // Czeka na sygnał wznowienia
+        } else {
+            // Symulacja normalnej pracy
+            creat_fan(); // wpuszczanie kibicow
+            sleep(1); // Symulacja wykonywania obowiązków
+        }
+    }
+    detach_shared_memory(stadium); // odlaczenie pamieci wspsoldzielonej
+    // zwolnienie semaforow
+    release_semaphore(sem_id, NUM_STATIONS);
+    release_semaphore(sem2_id, 0);
+    release_shared_memory(shm_id); // pamieci wspsoldzielonej
+    send_end_message(); // wysylanie wiadomosci koncowj do kierownika
+    return 0;
+}
+void initialize_resources() {
     s_key = initialize_key('A'); // inicjalizacja klucza do semaforow
     m_key = initialize_key('B'); // inicjalizacja klucza do pamieci wspodzielonej
     s2_key = initialize_key('C'); // inicjalizacja klucza do semafora zarzadzajcego pamiecia wspodzielona
 
 
     sem_id = allocate_semaphore(s_key, NUM_STATIONS); // alokowanie semaforow
-    shm_id = initialize_shared_memory(m_key, sizeof(int)); // inicjalizacja pmieci wspodzielonej
+    shm_id = initialize_shared_memory(m_key, sizeof(struct Stadium)); // inicjalizacja pmieci wspodzielonej
     sem2_id = allocate_semaphore(s2_key, 1); // alokowanie semafora zarzadzajcego pamiecia wspodzielona
 
     for (int i = 0; i < NUM_STATIONS; i++) {
@@ -36,37 +70,12 @@ int main() {
     }
     initialize_semaphore(sem2_id, 0, 1); // inicjalizownie semafora zarzadzajcego pamiecia wspodzielona
 
-    int *current_fans = (int *) shmat(shm_id, NULL, 0); // przylaczenie pamieci wspodzielonej
-    if (current_fans == (void *) -1) {
-        perror("Shared memory attach failed");
+    stadium = (struct Stadium *) shmat(shm_id, NULL, 0); // Przyłączenie pamięci współdzielonej
+    if (stadium == (void *) -1) {
+        perror("shmat failed");
         exit(1);
     }
-
-    *current_fans = 0; // ustawienie aktualnej ilosci kibiców na stadionie
-
-    // Główna pętla nasłuchująca sygnałów
-    while (!evacuation) {
-        wait_semaphore(sem2_id, 0, 0); // opuszczenie semafora zeby skorzystac z pamieci wspodzielonej
-        if (*current_fans == K) stop_letting_in = 1; // koniec wpuszczania kibicow po osiagnieciu pozadanej ilosci (K)
-        printf("Pracownik techniczny %d: Liczba kibiców na stadionie %d\n", getpid(), *current_fans);
-        signal_semaphore(sem2_id, 0); // zwolnienie semafora po uzyciu pamieci wspodzielonej
-        if (stop_letting_in) {
-            // Symulacja stanu "wstrzymano wpuszczanie"
-            sleep(1); // Czeka na sygnał wznowienia
-        } else {
-            // Symulacja normalnej pracy
-            creat_fan(); // wpuszczanie kibicow
-            sleep(1); // Symulacja wykonywania obowiązków
-        }
-    }
-    detach_shared_memory(current_fans); // odlaczenie pamieci wspsoldzielonej
-    release_semaphore(sem_id, NUM_STATIONS); // zwolnienie semaforow
-    release_shared_memory(shm_id); // zwolnienie semaforow
-    release_semaphore(sem2_id, 0);
-    send_end_message(); // wysylanie wiadomosci koncowj do kierownika
-    return 0;
 }
-
 void send_PID_message() {
     // usuniecie FIFO jezi istnieje
     if (access(FIFO_NAME, F_OK) == 0) {
@@ -87,7 +96,6 @@ void send_PID_message() {
 
     // Przygotowanie PID jako int
     pid_t pid = getpid();
-    printf("Technical worker PID: %d\n", pid);
 
     // Wysłanie PID przez FIFO
     if (write(fifo_fd, &pid, sizeof(int)) == -1) {

@@ -134,6 +134,13 @@ build CMakeFiles/kierownik_stadionu.dir/src/kierownik_stadionu.c.o: C_COMPILER__
   OBJECT_DIR = CMakeFiles/kierownik_stadionu.dir
   OBJECT_FILE_DIR = CMakeFiles/kierownik_stadionu.dir/src
 
+build CMakeFiles/kierownik_stadionu.dir/src/resources.c.o: C_COMPILER__kierownik_stadionu_unscanned_Debug /home/pawel/projekt/stadion/src/resources.c || cmake_object_order_depends_target_kierownik_stadionu
+  DEP_FILE = CMakeFiles/kierownik_stadionu.dir/src/resources.c.o.d
+  FLAGS = -g -std=gnu2x -fdiagnostics-color=always
+  INCLUDES = -I/home/pawel/projekt/stadion/include
+  OBJECT_DIR = CMakeFiles/kierownik_stadionu.dir
+  OBJECT_FILE_DIR = CMakeFiles/kierownik_stadionu.dir/src
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target kierownik_stadionu
@@ -142,7 +149,7 @@ build CMakeFiles/kierownik_stadionu.dir/src/kierownik_stadionu.c.o: C_COMPILER__
 #############################################
 # Link the executable bin/kierownik_stadionu
 
-build bin/kierownik_stadionu: C_EXECUTABLE_LINKER__kierownik_stadionu_Debug CMakeFiles/kierownik_stadionu.dir/src/kierownik_stadionu.c.o
+build bin/kierownik_stadionu: C_EXECUTABLE_LINKER__kierownik_stadionu_Debug CMakeFiles/kierownik_stadionu.dir/src/kierownik_stadionu.c.o CMakeFiles/kierownik_stadionu.dir/src/resources.c.o
   FLAGS = -g
   OBJECT_DIR = CMakeFiles/kierownik_stadionu.dir
   POST_BUILD = :

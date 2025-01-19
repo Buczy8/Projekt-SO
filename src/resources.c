@@ -30,19 +30,24 @@ int signal_semaphore(int sem_ID, int number) {
     return 0;
 }
 
-int wait_semaphore(int sem_ID, int number, int flags) {
+void wait_semaphore(int sem_ID, int number, int flags) {
     int id;
     struct sembuf operation[1];
     operation[0].sem_num = number;
     operation[0].sem_op = -1;
     operation[0].sem_flg = 0 | flags; //SEM_UNDO;
 
-    if (id = semop(sem_ID, operation, 1) == -1)
-        perror("semaphore wait error (semop) ");
-    else
-        return 0;
+    while (semop(sem_ID, operation, 1) == -1) {
+        if (errno == EINTR) {
+            // Operacja została przerwana przez sygnał, ponów próbę
+            continue;
+        } else {
+            // Inny błąd, zakończ działanie z komunikatem
+            perror("Semaphore wait error (semop)");
+            exit(1);
+        }
+    }
 }
-
 int value_semaphore(int sem_ID, int number) {
     int value;
     value = semctl(sem_ID, number, GETVAL, NULL);

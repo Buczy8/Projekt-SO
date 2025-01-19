@@ -31,7 +31,6 @@ int signal_semaphore(int sem_ID, int number) {
 }
 
 void wait_semaphore(int sem_ID, int number, int flags) {
-    int id;
     struct sembuf operation[1];
     operation[0].sem_num = number;
     operation[0].sem_op = -1;
@@ -115,6 +114,7 @@ int initialize_shared_memory(key_t key, int size) {
         perror("initialize shered memory error");
         exit(1);
     }
+    return shm_ID;
 }
 
 int release_shared_memory(int shm_ID) {

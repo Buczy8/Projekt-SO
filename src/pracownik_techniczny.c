@@ -8,7 +8,8 @@
 volatile sig_atomic_t stop_letting_in = 0;
 volatile sig_atomic_t evacuation = 0;
 
-key_t s_key, m_key, m_s_key, q_key, exit_s_key, vip_exit_key; // deklaracja kluczy do IPC
+
+key_t s_key, m_key, m_s_key, q_key, exit_key, vip_exit_key; // deklaracja kluczy do IPC
 int sem_id, shm_id, m_sem_id, msg_id, exit_sem_id, vip_exit_sem_id; // deklaracja zmiennych do IPC
 
 void send_end_message(); // funkcja wysylajaca wiadomosc koncowa do kierownika stadionu
@@ -18,12 +19,15 @@ void creat_fan(); // funkcja tworzaca kibicow
 void initialize_resources(); // funkcja do inicjalizacji mechanizmow IPC
 void release_resources(); //funkcja do zwalnina mechanizmow IPC
 void release_stadium();
+
 struct Stadium *stadium;
 struct bufor message;
 
 int main() {
+    int fan_created = 0;
     signal_handling(); // // Rejestracja funkcji obsługi sygnałów
     initialize_resources(); // inicjalizacja mechanizmow IPC
+
 
     stadium->fans = 0; // ustawienie aktualnej ilosci kibiców na stadionie
     stadium->entry_status = 1; // ustawienie flagi na wchodzenie na stadion
@@ -31,9 +35,8 @@ int main() {
     for (int i = 0; i < NUM_STATIONS; i++) {
         stadium->station_status[i] = 0; // ustawienie statusu stanowiska 0 wolne; 1 team B; 2 team A
     }
-
     // Główna pętla nasłuchująca sygnałów
-    while (!evacuation ) {
+    while (!evacuation) {
         wait_semaphore(m_sem_id, 0, 0); // opuszczenie semafora zeby skorzystac z pamieci wspodzielonej
         if (stadium->fans == K) {
             stop_letting_in = 1; // koniec wpuszczania kibicow po osiagnieciu pozadanej ilosci (K)
@@ -43,15 +46,16 @@ int main() {
             // Symulacja stanu "wstrzymano wpuszczanie"
             sleep(1); // Czeka na sygnał wznowienia
         } else {
+            //printf("Pracownik techniczny %d: Liczba kibiców na stadionie %d\n", getpid(), stadium->fans);
             // Symulacja normalnej pracy
+            fan_created++;
             creat_fan(); // wpuszczanie kibicow
             sleep(1); // Symulacja wykonywania obowiązków
-            printf("Pracownik techniczny %d: Liczba kibiców na stadionie %d\n", getpid(), stadium->fans);
         }
     }
-
+    printf("Pracownik techniczny %d: Liczba kibiców na stadionie %d\n", getpid(), stadium->fans);
     release_stadium();
-    for (int i = 0; i <= stadium->fans;i++) {
+    for (int i = 0; i <= fan_created; i++) {
         wait(NULL);
     }
     send_end_message();
@@ -64,7 +68,7 @@ void initialize_resources() {
     m_key = initialize_key('B'); // inicjalizacja klucza do pamieci wspodzielonej
     m_s_key = initialize_key('C'); // inicjalizacja klucza do semafora zarzadzajcego pamiecia wspodzielona
     q_key = initialize_key('D'); // inicjalizacja klucza do kolejki komunikatow
-    exit_s_key = initialize_key('E');
+    exit_key = initialize_key('E');
     //inicjalizcja klucza do semafora zarzadajacego wyjsciem ze stadionu zwyklych kibicow
     vip_exit_key = initialize_key('F'); //inicjalizcja klucza do semafora zarzadajacego wyjsciem ze stadionu kibicow VIP
 
@@ -72,7 +76,7 @@ void initialize_resources() {
     shm_id = initialize_shared_memory(m_key, sizeof(struct Stadium)); // inicjalizacja pmieci wspodzielonej
     m_sem_id = allocate_semaphore(m_s_key, 1); // alokowanie semafora zarzadzajcego pamiecia wspodzielona
     msg_id = initialize_message_queue(q_key); // inicjalizacja kolejki komunikatow
-    exit_sem_id = allocate_semaphore(exit_s_key, 1);
+    exit_sem_id = allocate_semaphore(exit_key, 1);
     //alokowanie semafora zarzadajacego wyjsciem ze stadionu zwyklych kibicow
     vip_exit_sem_id = allocate_semaphore(vip_exit_key, 1);
     //alokowanie semafora zarzadajacego wyjsciem ze stadionu  kibicow VIP
@@ -100,9 +104,10 @@ void initialize_resources() {
 }
 
 void send_end_message() {
-    message.mtype=2;
-    message.mvalue=2;
-    send_message(msg_id, &message); // wyslanie koncowej widomosci ale tu jest blad invalid argument ale komunikat dochodzi
+    message.mtype = 2;
+    message.mvalue = 2;
+    send_message(msg_id, &message);
+    // wyslanie koncowej widomosci ale tu jest blad invalid argument ale komunikat dochodzi
 }
 
 void signal_handler(int sig) {
@@ -125,6 +130,8 @@ void signal_handler(int sig) {
         default:
             printf("Pracownik techniczny: Otrzymano nieznany sygnał (%d).\n", sig);
     }
+
+    signal_handling();
 }
 
 void signal_handling() {
@@ -171,7 +178,8 @@ void release_resources() {
     release_shared_memory(shm_id); // pamieci wspsoldzielonej
     release_message_queue(msg_id);
 }
+
 void release_stadium() {
-    signal_semaphore(vip_exit_sem_id,0);
-    signal_semaphore(exit_sem_id,0);
+    signal_semaphore(vip_exit_sem_id, 0);
+    signal_semaphore(exit_sem_id, 0);
 }

@@ -20,6 +20,8 @@
 #include <fcntl.h> // Operacje na deskryptorach plikow
 #include <sys/stat.h> // Obsluga informacji o plikach, uprawnieniach i potoku nazwanego FIFO
 #include <errno.h>
+#include <signal.h>
+#include <pthread.h>
 
 #define FIFO_NAME "FIF0"
 #define NUM_STATIONS 3  // ilosc stanowiski do kontroli kibicow
@@ -36,14 +38,16 @@ struct Fan {
     int id; // id kibica
     int team; // 0 - drużyna A, 1 - druzyna B
     bool dangerous_item; // posiadanie niebezpiecznego przedmiotu
-    int is_vip; // status VIP
+    bool is_vip; // status VIP
+    int age; // wiek kibica
+    bool has_child; // posiadanie diecka
 };
 
 struct Stadium {
     int fans; // ilosc kibicow na stadionie
     int station_status[NUM_STATIONS]; // Tablica statusow stanowisk (0 - wolne, TEAM_A/TEAM_B - zajęte)
-    int entry_status;
-    int exit_status;
+    int entry_status; // status wchodzenia na stadion
+    int exit_status; // status opuszcznia stadionu
 };
 
 //operacje semaforowe

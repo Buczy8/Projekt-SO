@@ -9,4 +9,4 @@ include_directories(include)
 
 add_executable(kibic src/kibic.c src/resources.c)
 add_executable(pracownik_techniczny src/pracownik_techniczny.c src/resources.c)
-add_executable(kierownik_stadionu src/kierownik_stadionu.c)
+add_executable(kierownik_stadionu src/kierownik_stadionu.c src/resources.c)

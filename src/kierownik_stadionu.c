@@ -7,12 +7,18 @@
 #define SIGNAL_RESUME 2
 #define SIGNAL_EVACUATE 3
 
+key_t q_key;
+int msg_id;
+
+struct bufor message;
+
 int recive_PID_message();
 void recive_end_message();
 void print_menu();
+int initialize_resources();
 
 int main() {
-    int PID_worker = recive_PID_message();
+    int PID_worker = initialize_resources();
     int signal = -1;
 
     print_menu();
@@ -58,7 +64,7 @@ int main() {
             break;
         }
     }
-    recive_end_message();
+    recive_end_message(); // otrzymanie widomosci konczacej
     return 0;
 }
 
@@ -70,42 +76,13 @@ void print_menu() {
     printf(" 3 - Ewakuacja stadionu (SIGINT)\n");
 }
 
-int recive_PID_message() {
-    // Otwórz FIFO do odczytu
-    int fifo_fd = open(FIFO_NAME, O_RDONLY);
-    if (fifo_fd == -1) {
-        perror("FIFO open error");
-        exit(1);
-    }
-
-    // Odczytanie PID jako int
-    int pid;
-    ssize_t n = read(fifo_fd, &pid, sizeof(int));
-    if (n > 0) {
-        printf("Kierownik dostał PID pracownika technicznego: %d\n", pid);
-    } else {
-        perror("Read error");
-    }
-
-    close(fifo_fd);
-    return pid;
-}
-
 void recive_end_message() {
-    // otweranie potoku nazwanego
-    int fifo_fd = open(FIFO_NAME, O_RDONLY);
-    if (fifo_fd == -1) {
-        perror("FIFO open error");
-        exit(1);
-    }
-
-    char buffer[128]; // bufor na dane do odczytu
-    ssize_t n = read(fifo_fd, buffer, sizeof(buffer) - 1); // odczytujemy dane z potoku nazwanego
-    if (n > 0) {
-        buffer[n] = '\0'; // Dodanie null-terminatora zeby traktowac to jako string
-        printf("kierownik stadionu dostał wiadomość: %s", buffer);
-    } else {
-        perror("Read error");
-    }
-    close(fifo_fd);
+    receive_message(msg_id,&message,2);
+    printf("kierownik stadionu dostał wiadomość o opuszczeniu stdaionu%d\n" , message.mvalue);
+}
+int initialize_resources() {
+    q_key = initialize_key('D');
+    msg_id = initialize_message_queue(q_key);
+    receive_message(msg_id, &message, 1);
+    return message.mvalue;
 }

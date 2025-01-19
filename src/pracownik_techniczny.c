@@ -8,67 +8,89 @@
 volatile sig_atomic_t stop_letting_in = 0;
 volatile sig_atomic_t evacuation = 0;
 
-key_t s_key, m_key, s2_key; // deklaracja kluczy do IPC
-int sem_id, shm_id, sem2_id; // deklaracja zmiennych do IPC
+key_t s_key, m_key, m_s_key, q_key, exit_s_key, vip_exit_key; // deklaracja kluczy do IPC
+int sem_id, shm_id, m_sem_id, msg_id, exit_sem_id, vip_exit_sem_id; // deklaracja zmiennych do IPC
 
-void send_PID_message(); // funkcja wysylajaca PID do kierownika stadionu
 void send_end_message(); // funkcja wysylajaca wiadomosc koncowa do kierownika stadionu
 void signal_handler(int sig); // funkcja obsługujaca poszczegolny sygnal
 void signal_handling(); // funkcja obslugujaca sygnaly od kierownika
 void creat_fan(); // funkcja tworzaca kibicow
-void initialize_resources();
+void initialize_resources(); // funkcja do inicjalizacji mechanizmow IPC
+void release_resources(); //funkcja do zwalnina mechanizmow IPC
+void release_stadium();
 struct Stadium *stadium;
+struct bufor message;
 
 int main() {
-    send_PID_message(); // wyslanie PIDu procesu pracownika technicznego do kierownika stadionu
     signal_handling(); // // Rejestracja funkcji obsługi sygnałów
-
     initialize_resources(); // inicjalizacja mechanizmow IPC
 
     stadium->fans = 0; // ustawienie aktualnej ilosci kibiców na stadionie
+    stadium->entry_status = 1; // ustawienie flagi na wchodzenie na stadion
+    stadium->exit_status = 0;
     for (int i = 0; i < NUM_STATIONS; i++) {
-        stadium->station_status[i] = 0;
+        stadium->station_status[i] = 0; // ustawienie statusu stanowiska 0 wolne; 1 team B; 2 team A
     }
 
     // Główna pętla nasłuchująca sygnałów
-    while (!evacuation) {
-        wait_semaphore(sem2_id, 0, 0); // opuszczenie semafora zeby skorzystac z pamieci wspodzielonej
-        printf("Pracownik techniczny %d: Liczba kibiców na stadionie %d\n", getpid(), stadium->fans);
+    while (!evacuation ) {
+        wait_semaphore(m_sem_id, 0, 0); // opuszczenie semafora zeby skorzystac z pamieci wspodzielonej
         if (stadium->fans == K) {
             stop_letting_in = 1; // koniec wpuszczania kibicow po osiagnieciu pozadanej ilosci (K)
         }
-        signal_semaphore(sem2_id, 0); // zwolnienie semafora po uzyciu pamieci wspodzielonej
+        signal_semaphore(m_sem_id, 0); // zwolnienie semafora po uzyciu pamieci wspodzielonej
         if (stop_letting_in) {
             // Symulacja stanu "wstrzymano wpuszczanie"
-            sleep(100); // Czeka na sygnał wznowienia
+            sleep(1); // Czeka na sygnał wznowienia
         } else {
             // Symulacja normalnej pracy
             creat_fan(); // wpuszczanie kibicow
             sleep(1); // Symulacja wykonywania obowiązków
+            printf("Pracownik techniczny %d: Liczba kibiców na stadionie %d\n", getpid(), stadium->fans);
         }
     }
-    detach_shared_memory(stadium); // odlaczenie pamieci wspsoldzielonej
-    // zwolnienie semaforow
-    release_semaphore(sem_id, NUM_STATIONS);
-    release_semaphore(sem2_id, 0);
-    release_shared_memory(shm_id); // pamieci wspsoldzielonej
-    send_end_message(); // wysylanie wiadomosci koncowj do kierownika
+
+    release_stadium();
+    for (int i = 0; i <= stadium->fans;i++) {
+        wait(NULL);
+    }
+    send_end_message();
+    release_resources();
     return 0;
 }
+
 void initialize_resources() {
-    s_key = initialize_key('A'); // inicjalizacja klucza do semaforow
+    s_key = initialize_key('A'); // inicjalizacja klucza do semaforow rzadajacych wejsciem na stacje kontroli
     m_key = initialize_key('B'); // inicjalizacja klucza do pamieci wspodzielonej
-    s2_key = initialize_key('C'); // inicjalizacja klucza do semafora zarzadzajcego pamiecia wspodzielona
+    m_s_key = initialize_key('C'); // inicjalizacja klucza do semafora zarzadzajcego pamiecia wspodzielona
+    q_key = initialize_key('D'); // inicjalizacja klucza do kolejki komunikatow
+    exit_s_key = initialize_key('E');
+    //inicjalizcja klucza do semafora zarzadajacego wyjsciem ze stadionu zwyklych kibicow
+    vip_exit_key = initialize_key('F'); //inicjalizcja klucza do semafora zarzadajacego wyjsciem ze stadionu kibicow VIP
 
-
-    sem_id = allocate_semaphore(s_key, NUM_STATIONS); // alokowanie semaforow
+    sem_id = allocate_semaphore(s_key, NUM_STATIONS); // alokowanie semaforow do zarzadania stanowiskami do kontroli
     shm_id = initialize_shared_memory(m_key, sizeof(struct Stadium)); // inicjalizacja pmieci wspodzielonej
-    sem2_id = allocate_semaphore(s2_key, 1); // alokowanie semafora zarzadzajcego pamiecia wspodzielona
+    m_sem_id = allocate_semaphore(m_s_key, 1); // alokowanie semafora zarzadzajcego pamiecia wspodzielona
+    msg_id = initialize_message_queue(q_key); // inicjalizacja kolejki komunikatow
+    exit_sem_id = allocate_semaphore(exit_s_key, 1);
+    //alokowanie semafora zarzadajacego wyjsciem ze stadionu zwyklych kibicow
+    vip_exit_sem_id = allocate_semaphore(vip_exit_key, 1);
+    //alokowanie semafora zarzadajacego wyjsciem ze stadionu  kibicow VIP
 
     for (int i = 0; i < NUM_STATIONS; i++) {
         initialize_semaphore(sem_id, i, MAX_NUM_FANS); // inicjalizcaja semaforow
     }
-    initialize_semaphore(sem2_id, 0, 1); // inicjalizownie semafora zarzadzajcego pamiecia wspodzielona
+
+    initialize_semaphore(m_sem_id, 0, 1); // inicjalizacja semafora zarzadzajcego pamiecia wspodzielona
+    initialize_semaphore(exit_sem_id, 0, 0);
+    //inicjalizacja semafora zarzadajacego wyjsciem ze stadionu zwyklych kibicow
+    initialize_semaphore(vip_exit_sem_id, 0, 0);
+    //inicjalizacja semafora zarzadajacego wyjsciem ze stadionu  kibicow VIP
+
+    // wyslanie wiadomosci z pidem pracownika technicznego do kierownika stadionu
+    message.mtype = 1;
+    message.mvalue = getpid();
+    send_message(msg_id, &message);
 
     stadium = (struct Stadium *) shmat(shm_id, NULL, 0); // Przyłączenie pamięci współdzielonej
     if (stadium == (void *) -1) {
@@ -76,62 +98,28 @@ void initialize_resources() {
         exit(1);
     }
 }
-void send_PID_message() {
-    // usuniecie FIFO jezi istnieje
-    if (access(FIFO_NAME, F_OK) == 0) {
-        unlink(FIFO_NAME); // Usuwa istniejący plik FIFO
-    }
-    // Tworzenie FIFO, jeśli nie istnieje
-    if (mkfifo(FIFO_NAME, 0666) == -1) {
-        perror("FIFO creation error");
-        exit(1);
-    }
-
-    // Otwórz FIFO do zapisu
-    int fifo_fd = open(FIFO_NAME, O_WRONLY);
-    if (fifo_fd == -1) {
-        perror("FIFO open error");
-        exit(1);
-    }
-
-    // Przygotowanie PID jako int
-    pid_t pid = getpid();
-
-    // Wysłanie PID przez FIFO
-    if (write(fifo_fd, &pid, sizeof(int)) == -1) {
-        perror("Write error");
-        close(fifo_fd);
-        exit(1);
-    }
-    close(fifo_fd);
-}
 
 void send_end_message() {
-    int fifo_fd = open(FIFO_NAME, O_WRONLY);
-    if (fifo_fd == -1) {
-        perror("FIFO open error");
-        exit(1);
-    }
-
-    char message[] = "Wszyscy kibice opuścili stadion\n";
-    write(fifo_fd, message, strlen(message));
-    close(fifo_fd);
-    // Usunięcie potoku
-    unlink(FIFO_NAME);
+    message.mtype=2;
+    message.mvalue=2;
+    send_message(msg_id, &message); // wyslanie koncowej widomosci ale tu jest blad invalid argument ale komunikat dochodzi
 }
 
 void signal_handler(int sig) {
     switch (sig) {
         case SIGUSR1:
             stop_letting_in = 1; // Wstrzymanie wpuszczania kibiców
+            stadium->entry_status = 0; // zmiana statusu wpuszania kibicow na stadion
             printf("Pracownik techniczny: Wstrzymano wpuszczanie kibiców.\n");
             break;
         case SIGUSR2:
             stop_letting_in = 0; // Wznowienie wpuszczania kibiców
+            stadium->entry_status = 1; // zmiana statusu wpuszania kibicow na stadion
             printf("Pracownik techniczny: Wznowiono wpuszczanie kibiców.\n");
             break;
         case SIGINT:
             evacuation = 1; // Ewakuacja stadionu
+            stadium->exit_status = 1;
             printf("Pracownik techniczny: Rozpoczęto ewakuację stadionu.\n");
             break;
         default:
@@ -171,4 +159,19 @@ void creat_fan() {
 
             exit(0);
     }
+}
+
+void release_resources() {
+    detach_shared_memory(stadium); // odlaczenie pamieci wspsoldzielonej
+    // zwolnienie semaforow
+    release_semaphore(sem_id, NUM_STATIONS);
+    release_semaphore(m_sem_id, 0);
+    release_semaphore(exit_sem_id, 0);
+    release_semaphore(vip_exit_sem_id, 0);
+    release_shared_memory(shm_id); // pamieci wspsoldzielonej
+    release_message_queue(msg_id);
+}
+void release_stadium() {
+    signal_semaphore(vip_exit_sem_id,0);
+    signal_semaphore(exit_sem_id,0);
 }

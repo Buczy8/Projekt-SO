@@ -19,24 +19,25 @@
 #include <time.h> // Funkcje do obslugi czasu
 #include <fcntl.h> // Operacje na deskryptorach plikow
 #include <sys/stat.h> // Obsluga informacji o plikach, uprawnieniach i potoku nazwanego FIFO
-#include <errno.h>
-#include <signal.h>
-#include <pthread.h>
+#include <errno.h> // Obsługa kodów błędów
+#include <signal.h> // Obsługa sygnałów
+#include <pthread.h> // Obsługa wątków
+#include <semaphore.h> // obsługa semaforów dla wątków
 
-#define FIFO_NAME "FIF0"
 #define NUM_STATIONS 3  // ilosc stanowiski do kontroli kibicow
 #define MAX_NUM_FANS 3 // maksymalna ilosc kibicow na jednym stanowisku do kontroli
-#define K 30 // maksymalna ilosc kibicow ktorzy moga przebywac na stadionie
+#define K 7900 // maksymalna ilosc kibicow ktorzy moga przebywac na stadionie
 // podzial na druzyny
 #define TEAM_A 2
 #define TEAM_B 1
-
+#define FAN 1 // typ komunikatu dla kibica
+#define MANAGER 2 // typ komunikatu dla kierownika
 #define VIP (K * 0.005) // szansa na zostanie kibicem VIP
 
 // struktura opisujaca kibica
 struct Fan {
     int id; // id kibica
-    int team; // 0 - drużyna A, 1 - druzyna B
+    int team; // 2 - drużyna A, 1 - druzyna B
     bool dangerous_item; // posiadanie niebezpiecznego przedmiotu
     bool is_vip; // status VIP
     int age; // wiek kibica
@@ -48,6 +49,7 @@ struct Stadium {
     int station_status[NUM_STATIONS]; // Tablica statusow stanowisk (0 - wolne, TEAM_A/TEAM_B - zajęte)
     int entry_status; // status wchodzenia na stadion
     int exit_status; // status opuszcznia stadionu
+    int passing_counter[K]; // licznik przepuszczeń przez kibica
 };
 
 //operacje semaforowe
@@ -55,13 +57,13 @@ int allocate_semaphore(key_t key, int number);
 
 void initialize_semaphore(int sem_ID, int number, int val);
 
-int signal_semaphore(int sem_ID, int number);
+void signal_semaphore(int sem_ID, int number);
 
 void wait_semaphore(int sem_ID, int number, int flags);
 
 int value_semaphore(int sem_ID, int number);
 
-int release_semaphore(int sem_ID, int number);
+void release_semaphore(int sem_ID, int number);
 
 key_t initialize_key(int name);
 
@@ -78,12 +80,12 @@ void send_message(int msg_ID, struct bufor *message);
 
 void receive_message(int msg_ID, struct bufor *message, int mtype);
 
-int release_message_queue(int msg_ID);
+void release_message_queue(int msg_ID);
 
 //operacje na pamięci dzielonej
 int initialize_shared_memory(key_t key, int size);
 
-int release_shared_memory(int shm_ID);
+void release_shared_memory(int shm_ID);
 
-int detach_shared_memory(const void *addr);
+void detach_shared_memory(const void *addr);
 #endif //RESOURCES_H

@@ -19,22 +19,11 @@ void initialize_semaphore(int sem_ID, int number, int val) {
     }
 }
 
-int signal_semaphore(int sem_ID, int number) {
+void signal_semaphore(int sem_ID, int number) {
     struct sembuf operation[1];
     operation[0].sem_num = number;
     operation[0].sem_op = 1;
-    operation[0].sem_flg = 0; //SEM_UNDO;
-
-    if (semop(sem_ID, operation, 1) == -1)
-        perror("semaphore signal error (semop) ");
-    return 0;
-}
-
-void wait_semaphore(int sem_ID, int number, int flags) {
-    struct sembuf operation[1];
-    operation[0].sem_num = number;
-    operation[0].sem_op = -1;
-    operation[0].sem_flg = 0 | flags; //SEM_UNDO;
+    operation[0].sem_flg = 0;
 
     while (semop(sem_ID, operation, 1) == -1) {
         if (errno == EINTR) {
@@ -47,6 +36,25 @@ void wait_semaphore(int sem_ID, int number, int flags) {
         }
     }
 }
+
+void wait_semaphore(int sem_ID, int number, int flags) {
+    struct sembuf operation[1];
+    operation[0].sem_num = number;
+    operation[0].sem_op = -1;
+    operation[0].sem_flg = 0 | flags;
+
+    while (semop(sem_ID, operation, 1) == -1) {
+        if (errno == EINTR) {
+            // Operacja została przerwana przez sygnał, ponów próbę
+            continue;
+        } else {
+            // Inny błąd, zakończ działanie z komunikatem
+            perror("Semaphore wait error (semop)");
+            exit(1);
+        }
+    }
+}
+
 int value_semaphore(int sem_ID, int number) {
     int value;
     value = semctl(sem_ID, number, GETVAL, NULL);
@@ -57,14 +65,11 @@ int value_semaphore(int sem_ID, int number) {
     return value;
 }
 
-int release_semaphore(int sem_ID, int number) {
-    int id;
-    id = semctl(sem_ID, number, IPC_RMID, NULL);
-    if (id == -1) {
+void release_semaphore(int sem_ID, int number) {
+    if (semctl(sem_ID, number, IPC_RMID, NULL) == -1) {
         perror("releasing shered memory error (shmctl)");
         exit(1);
     }
-    return id;
 }
 
 key_t initialize_key(int name) {
@@ -99,13 +104,11 @@ void receive_message(int msg_ID, struct bufor *message, int mtype) {
     }
 }
 
-int release_message_queue(int msg_ID) {
-    int id = msgctl(msg_ID, IPC_RMID, NULL);
-    if (id == -1) {
+void release_message_queue(int msg_ID) {
+    if (msgctl(msg_ID, IPC_RMID, NULL) == -1) {
         perror("releasing shered memory error (shmctl)");
         exit(1);
     }
-    return id;
 }
 
 int initialize_shared_memory(key_t key, int size) {
@@ -117,22 +120,16 @@ int initialize_shared_memory(key_t key, int size) {
     return shm_ID;
 }
 
-int release_shared_memory(int shm_ID) {
-    int id;
-    id = shmctl(shm_ID, IPC_RMID, NULL);
-    if (id == -1) {
+void release_shared_memory(int shm_ID) {
+    if (shmctl(shm_ID, IPC_RMID, NULL) == -1) {
         perror("releasing shered memory error (shmctl)");
         exit(1);
     }
-    return id;
 }
 
-int detach_shared_memory(const void *addr) {
-    int id;
-    id = shmdt(addr);
-    if (id == -1) {
+void detach_shared_memory(const void *addr) {
+    if (shmdt(addr) == -1) {
         perror("detaching shered memory error (shmdt)");
         exit(1);
     }
-    return id;
 }

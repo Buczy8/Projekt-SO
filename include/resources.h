@@ -26,7 +26,7 @@
 #define FIFO_NAME "FIF0"
 #define NUM_STATIONS 3  // ilosc stanowiski do kontroli kibicow
 #define MAX_NUM_FANS 3 // maksymalna ilosc kibicow na jednym stanowisku do kontroli
-#define K 10 // maksymalna ilosc kibicow ktorzy moga przebywac na stadionie
+#define K 30 // maksymalna ilosc kibicow ktorzy moga przebywac na stadionie
 // podzial na druzyny
 #define TEAM_A 2
 #define TEAM_B 1

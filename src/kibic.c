@@ -1,7 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <pthread.h>
-#include <unistd.h>
+#include <semaphore.h>
 #include "resources.h"
 
 // Klucze IPC
@@ -10,9 +7,14 @@ key_t s_key, m_key, m_s_key, exit_s_key, vip_exit_key;
 // Zmienne IPC
 int shm_id, sem_id, m_sem_id, exit_sem_id, vip_exit_sem_id;
 
+sem_t child_semaphore; // Deklaracja semafora
+
 // Struktury
 struct Stadium *stadium;
 struct Fan fan;
+
+// wątek dziecka
+pthread_t id_child;
 
 // Deklaracje funkcji
 void initialize_resources(); // Inicjalizacja zasobów IPC
@@ -23,13 +25,13 @@ void check_stadium_full(); // Sprawdzenie, czy stadion jest pełny
 void perform_control(int i); // Przeprowadzenie kontroli kibica na stanowisku
 void finalize_station(int i, int *station); // Finalizacja zajmowania stanowiska
 void handle_exit(); // Obsługa wyjścia fana ze stadionu
-void* child(void* arg); // Obsługa dziecka w przypadku, gdy kibic jest z dzieckiem
+void *child(void *arg); // Obsługa dziecka w przypadku, gdy kibic jest z dzieckiem
 void wait_for_entry(); // Oczekiwanie na odblokowanie wejścia na stadion
 
 // Funkcja główna
 int main() {
     generate_fan_attributes(); // Generowanie losowych atrybutów fana
-    initialize_resources();    // Inicjalizacja zasobów IPC
+    initialize_resources(); // Inicjalizacja zasobów IPC
 
     int station = 0;
 
@@ -47,29 +49,43 @@ int main() {
     wait_for_entry(); // Oczekiwanie na pozwolenie na wejście
     check_stadium_full(); // Sprawdzenie, czy stadion nie jest pełny
 
-    // Kibic wchodzi na stadion
-    printf("Kibic %d: Drużyny: %d VIP status: %d Pomyślnie wchodzi na stadion.\n", fan.id, fan.team, fan.is_vip);
-    stadium->fans++; // Zwiększenie liczby kibiców na stadionie
+    if (!fan.has_child) {
+        // Kibic wchodzi na stadion
+        printf("Kibic %d: Drużyny: %d VIP status: %d Pomyślnie wchodzi na stadion.\n", fan.id, fan.team, fan.is_vip);
+        stadium->fans++; // Zwiększenie liczby kibiców na stadionie
+    } else {
+        // Kibic wchodzi na stadion
+        printf("Kibic %d: Drużyny: %d VIP status: %d Pomyślnie wchodzi na stadion.\n", fan.id, fan.team, fan.is_vip);
+        printf("Dziecko kibica: %d Pomyślnie wchodzi na stadion.\n", fan.id);
+        stadium->fans+=2; // Zwiększenie liczby kibiców na stadionie o 2
+    }
+
     signal_semaphore(m_sem_id, 0); // Zwolnienie dostępu do pamięci współdzielonej
 
     handle_exit(); // Obsługa wyjścia kibica ze stadionu
-    return 0;
+    if (fan.has_child) {
+        if (pthread_detach(id_child)==-1) {
+            fprintf(stderr, "Error detaching a thread\n");
+            exit(1);
+        }
+    }
+    exit(0);
 }
 
 // Funkcja generująca losowe atrybuty fana
 void generate_fan_attributes() {
     srand(getpid());
-    fan.id = getpid();                               // Ustawienie unikalnego ID fana
+    fan.id = getpid(); // Ustawienie unikalnego ID fana
     fan.dangerous_item = (rand() % 100) < 5 ? 1 : 0; // 5% szansa na posiadanie niebezpiecznego przedmiotu
-    fan.is_vip = (rand() % 100) < VIP ? 1 : 0;       // VIP z prawdopodobieństwem określonym przez stałą VIP
-    fan.team = (rand() % 2) == 0 ? TEAM_A : TEAM_B;  // Przypisanie fana do drużyny
-    fan.age = (rand() % 100) + 1;                    // Losowy wiek fana
-    fan.has_child = (rand() % 100) < 15 ? 1 : 0;     // 15% szansa, że kibic ma dziecko
+    fan.is_vip = (rand() % 100) < VIP ? 1 : 0; // VIP z prawdopodobieństwem określonym przez stałą VIP
+    fan.team = (rand() % 2) == 0 ? TEAM_A : TEAM_B; // Przypisanie fana do drużyny
+    fan.age = (rand() % 100) + 1; // Losowy wiek fana
+    fan.has_child = (rand() % 100) < 50 ? 1 : 0; // 15% szansa, że kibic ma dziecko
 
     // Jeśli kibic ma dziecko, uruchamiany jest osobny wątek
     if (fan.has_child) {
-        pthread_t id_child;
-        if (pthread_create(&id_child, NULL, child, &id_child) == -1) {
+        sem_init(&child_semaphore, 0, 0);
+        if (pthread_create(&id_child, NULL, child, NULL) == -1) {
             fprintf(stderr, "Error creating a thread\n");
             exit(1);
         }
@@ -90,8 +106,8 @@ void initialize_resources() {
     exit_sem_id = allocate_semaphore(exit_s_key, 1); // Alokacja semafora wyjścia
     vip_exit_sem_id = allocate_semaphore(vip_exit_key, 1); // Alokacja semafora wyjścia VIP
 
-    stadium = (struct Stadium *)shmat(shm_id, NULL, 0); // Podłączenie pamięci współdzielonej
-    if (stadium == (void *)-1) {
+    stadium = (struct Stadium *) shmat(shm_id, NULL, 0); // Podłączenie pamięci współdzielonej
+    if (stadium == (void *) -1) {
         perror("shmat");
         exit(1);
     }
@@ -100,7 +116,12 @@ void initialize_resources() {
 // Funkcja przeszukująca dostępne stanowiska
 void try_to_find_station(int *station) {
     for (int i = 0; i < NUM_STATIONS; i++) {
-        if (value_semaphore(sem_id, i) == 0) continue; // Jeśli stanowisko zajęte, pomiń
+        //jeżeli kibic ma dziecko to stanowisko musi miec dwa wolne miejsca
+        if (!fan.has_child) {
+            if (value_semaphore(sem_id, i) == 0) continue; // Jeśli stanowisko zajęte, pomiń
+        } else {
+            if (value_semaphore(sem_id, i) < 2) continue; // Jeśli stanowisko zajęte, pomiń
+        }
 
         if (try_to_enter_station(i, station)) break; // Jeśli udało się zająć stanowisko, przerwij
     }
@@ -114,7 +135,12 @@ int try_to_enter_station(int i, int *station) {
     if (stadium->station_status[i] == 0 || stadium->station_status[i] == fan.team) {
         stadium->station_status[i] = fan.team; // Przypisanie drużyny do stanowiska
         signal_semaphore(m_sem_id, 0); // Zwolnienie dostępu do pamięci współdzielonej
-        wait_semaphore(sem_id, i, 0); // Zajęcie stanowiska
+        if (!fan.has_child) {
+            wait_semaphore(sem_id, i, 0); // Zajęcie stanowiska
+        } else {
+            wait_semaphore(sem_id, i, 0); // Zajęcie stanowiska przez rodzica
+            wait_semaphore(sem_id, i, 0); // Zajęcie stanowiska przez dziecko
+        }
         wait_semaphore(m_sem_id, 0, 0); // zablokowanie pamięci współdzielonej
 
         check_stadium_full(); // Sprawdzenie, czy stadion nie jest pełny
@@ -132,31 +158,69 @@ int try_to_enter_station(int i, int *station) {
 
 // Funkcja sprawdzająca, czy stadion jest pełny
 void check_stadium_full() {
-    if (stadium->fans >= K) { // Sprawdzenie, czy liczba kibiców osiągnęła limit
-        printf("Stadion jest pełny. Kibic %d nie może wejść.\n", fan.id);
-        detach_shared_memory(stadium); // Odłączenie pamięci współdzielonej
-        signal_semaphore(m_sem_id, 0); // Zwolnienie dostępu do pamięci współdzielonej
-        exit(0); // Wyjście z procesu
+    if (!fan.has_child) {
+        if (stadium->fans >= K) {
+            // Sprawdzenie, czy liczba kibiców osiągnęła limit
+            printf("Stadion jest pełny. Kibic %d nie może wejść.\n", fan.id);
+            detach_shared_memory(stadium); // Odłączenie pamięci współdzielonej
+            signal_semaphore(m_sem_id, 0); // Zwolnienie dostępu do pamięci współdzielonej
+            exit(0); // Wyjście z procesu
+        }
+    } else {
+        if (stadium->fans >= K - 1) {
+            // Sprawdzenie, czy liczba kibiców osiągnęła limit
+            printf("Stadion jest pełny. Kibic %d z dzieckiem nie może wejść.\n", fan.id);
+            detach_shared_memory(stadium); // Odłączenie pamięci współdzielonej
+            signal_semaphore(m_sem_id, 0); // Zwolnienie dostępu do pamięci współdzielonej
+            if (pthread_detach(id_child)==-1) {
+                fprintf(stderr, "Error detaching a thread\n");
+                exit(1);
+            }
+            exit(0); // Wyjście z procesu
+        }
     }
 }
 
 // Funkcja przeprowadzająca kontrolę
 void perform_control(int i) {
-    printf("Kibic %d: Drużyny: %d Rozpoczęcie kontroli na stanowisku %d.\n", fan.id, fan.team, i);
+    if (!fan.has_child) {
+        printf("Kibic %d: Drużyny: %d Rozpoczęcie kontroli na stanowisku %d.\n", fan.id, fan.team, i);
 
-    if (fan.dangerous_item == 1) {
-        printf("Kibic %d: posiada niebezpieczny przedmiot. Nie wchodzi na stadion.\n", fan.id);
-        signal_semaphore(sem_id, i); // zwolnienie stanowiska do kontroli
-        detach_shared_memory(stadium);
-        exit(0);
+        if (fan.dangerous_item == 1) {
+            printf("Kibic %d: posiada niebezpieczny przedmiot. Nie wchodzi na stadion.\n", fan.id);
+            signal_semaphore(sem_id, i); // zwolnienie stanowiska do kontroli
+            detach_shared_memory(stadium);
+            exit(0);
+        }
+    } else {
+        printf("Kibic %d: Drużyny: %d Rozpoczęcie kontroli z na stanowisku %d.\n", fan.id, fan.team, i);
+        printf("Dziecko kibica: %d Rozpoczęcie kontroli z na stanowisku %d.\n", fan.id, i);
+
+        if (fan.dangerous_item == 1) {
+            printf("Kibic %d: posiada niebezpieczny przedmiot. Nie wchodzi na stadion.\n", fan.id);
+            printf("Dziecko kibica: %d Nie wchodzi na stadion. Rodzic posiada niebezpieczny przedmiot, nie może wejść na stadion samo\n", fan.id);
+            signal_semaphore(sem_id, i); // zwolnienie stanowiska do kontroli przez rodzica
+            signal_semaphore(sem_id, i); // zwolnienie stanowiska do kontroli przez dziecko
+            detach_shared_memory(stadium);
+            if (pthread_detach(id_child)==-1) {
+                fprintf(stderr, "Error detaching a thread\n");
+                exit(1);
+            }
+            exit(0);
+        }
     }
-
-    sleep(rand() % 10);
+    sleep(rand() % 10); // symulacja kontroli
 }
 
 // Funkcja finalizująca zajęcie stanowiska
 void finalize_station(int i, int *station) {
-    signal_semaphore(sem_id, i); // zwolnienie miejsca na stanowisku
+    if (!fan.has_child) {
+        signal_semaphore(sem_id, i); // zwolnienie miejsca na stanowisku
+    } else {
+        signal_semaphore(sem_id, i); // zwolnienie miejsca na stanowisku przez rodzica
+        signal_semaphore(sem_id, i); // zwolnienie miejsca na stanowisku przez dziecko
+    }
+
     signal_semaphore(m_sem_id, 0); // Zwolnienie dostępu do pamięci współdzielonej
 
     // jeżli stanowisko jest puste to może wejść kibic dowolnej drużyny
@@ -170,8 +234,10 @@ void finalize_station(int i, int *station) {
 
 // Funkcja oczekująca na pozwolenie wejścia
 void wait_for_entry() {
-    while (stadium->entry_status == 0) { // Czekaj, aż wejście zostanie odblokowane
-        if (stadium->exit_status == 1) { // Jeśli stadion zostaje zamknięty, zakończ
+    while (stadium->entry_status == 0) {
+        // Czekaj, aż wejście zostanie odblokowane
+        if (stadium->exit_status == 1) {
+            // Jeśli stadion zostaje zamknięty, zakończ
             detach_shared_memory(stadium);
             signal_semaphore(m_sem_id, 0); // Zwolnienie dostępu do pamięci współdzielonej
             exit(0);
@@ -180,19 +246,39 @@ void wait_for_entry() {
         }
     }
 }
+
 // Funkcja obsługująca wyjście fana
 void handle_exit() {
     if (fan.is_vip) {
         wait_semaphore(vip_exit_sem_id, 0, 0);
-        printf("Kibic %d: Drużyny: %d VIP status: %d wychodzi ze stadionu wejściem VIP\n", fan.id, fan.team, fan.is_vip);
+        printf("Kibic %d: Drużyny: %d VIP status: %d wychodzi ze stadionu wejściem VIP\n", fan.id, fan.team,fan.is_vip);
+        // dziecko wychodzi razem z rodzicem
+        if (fan.has_child) {
+            sem_post(&child_semaphore);
+            if (pthread_join(id_child,NULL)==-1){
+                fprintf(stderr, "Error joining a thread\n");
+                exit(1);
+            }
+        }
         signal_semaphore(vip_exit_sem_id, 0);
     } else {
         wait_semaphore(exit_sem_id, 0, 0);
         printf("Kibic %d: Drużyny: %d VIP status: %d wychodzi ze stadionu\n", fan.id, fan.team, fan.is_vip);
+        // dziecko wychodzi razem z rodzicem
+        if (fan.has_child) {
+            sem_post(&child_semaphore);
+            if (pthread_join(id_child,NULL)==-1){
+                fprintf(stderr, "Error joining a thread\n");
+                exit(1);
+            }
+        }
         signal_semaphore(exit_sem_id, 0);
     }
 }
+
 // Funkcja obsługująca wątek dziecka
-void* child(void* arg) {
-    // ????
+void *child(void *arg) {
+    sem_wait(&child_semaphore);
+    printf("Dziecko Kibica: %d wychodzi ze stadionu\n",fan.id);
+    pthread_exit(NULL);
 }

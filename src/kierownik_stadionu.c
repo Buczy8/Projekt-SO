@@ -18,10 +18,10 @@ void print_menu();
 int initialize_resources();
 
 int main() {
-    int PID_worker = initialize_resources();
+    int PID_worker = initialize_resources(); // pobranie PID-u pracownika technicznego do wysłania sygnałów
     int signal = -1;
 
-    print_menu();
+    print_menu(); // wyswietlenie menu
 
     while (1) {
         printf("\nPodaj nr sygnału: ");
@@ -31,7 +31,7 @@ int main() {
             while (getchar() != '\n'); // Czyszczenie bufora wejściowego
             continue;
         }
-
+        // obsługa błędu przy podaniu złego sygnału
         if (signal < 1 || signal > 3) {
             printf("Błąd: Niepoprawny numer sygnału.\n");
             continue;
@@ -40,18 +40,16 @@ int main() {
         int result = -1;
         switch (signal) {
             case SIGNAL_STOP:
-                result = kill(PID_worker, SIGUSR1);
-            // pracownik techniczny wstzymauje wpuszczenie kibicow na stadion(sygnal1)
+                result = kill(PID_worker, SIGUSR1); // pracownik techniczny wstzymauje wpuszczenie kibicow na stadion(sygnal1)
                 break;
             case SIGNAL_RESUME:
-                result = kill(PID_worker, SIGUSR2);
-            // pracownik techniczny wznawia wpuszczanie kibiców na stadion (sygnal2)
+                result = kill(PID_worker, SIGUSR2); // pracownik techniczny wznawia wpuszczanie kibiców na stadion (sygnal2)
                 break;
             case SIGNAL_EVACUATE:
                 result = kill(PID_worker, SIGINT); // wszyscy kibice opszuczaja stadion (koniec symulacji) (sygnal3)
                 break;
         }
-
+        // obsługa błędu sygnału
         if (result == -1) {
             perror("Błąd: Nie udało się wysłać sygnału");
             exit(1);
@@ -77,12 +75,12 @@ void print_menu() {
 }
 
 void recive_end_message() {
-    receive_message(msg_id,&message,2);
-    printf("kierownik stadionu dostał wiadomość o opuszczeniu stdaionu%d\n" , message.mvalue);
+    receive_message(msg_id,&message,MANAGER); // odebranie komunikatu od pracownika technicznego o zakończeniu wypuszczania kibiców
+    printf("kierownik stadionu dostał wiadomość o opuszczeniu stdaionu\n");
 }
 int initialize_resources() {
-    q_key = initialize_key('D');
-    msg_id = initialize_message_queue(q_key);
-    receive_message(msg_id, &message, 1);
-    return message.mvalue;
+    q_key = initialize_key('D'); // inicjalizacja klucza do kolejki komunikatów
+    msg_id = initialize_message_queue(q_key); // inicjalizacja kolejki komunikatów do odbierania wiadomości
+    receive_message(msg_id, &message, MANAGER); // odebranie wiadomośći z PID-em pracownika techniczengo
+    return message.mvalue; // zwrócenie PID-u pracownika technicznego
 }

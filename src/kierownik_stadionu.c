@@ -46,7 +46,7 @@ int main() {
                 result = kill(PID_worker, SIGUSR2); // pracownik techniczny wznawia wpuszczanie kibiców na stadion (sygnal2)
                 break;
             case SIGNAL_EVACUATE:
-                result = kill(PID_worker, SIGINT); // wszyscy kibice opszuczaja stadion (koniec symulacji) (sygnal3)
+                result = kill(PID_worker, SIGTERM); // wszyscy kibice opszuczaja stadion (koniec symulacji) (sygnal3)
                 break;
         }
         // obsługa błędu sygnału
@@ -71,7 +71,7 @@ void print_menu() {
     printf("Dostępne sygnały:\n");
     printf(" 1 - Wstrzymanie wpuszczania kibiców (SIGUSR1)\n");
     printf(" 2 - Wznowienie wpuszczania kibiców (SIGUSR2)\n");
-    printf(" 3 - Ewakuacja stadionu (SIGINT)\n");
+    printf(" 3 - Ewakuacja stadionu (SIGTERM)\n");
 }
 
 void recive_end_message() {

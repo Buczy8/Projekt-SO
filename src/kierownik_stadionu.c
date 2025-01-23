@@ -3,29 +3,28 @@
 //
 #include "resources.h"
 
-#define SIGNAL_STOP 1
-#define SIGNAL_RESUME 2
-#define SIGNAL_EVACUATE 3
+#define SIGNAL_STOP 1 // sygnał do wstrzymania wpuszczania kibiców
+#define SIGNAL_RESUME 2 // sygnał do wznowienia wpuszczania kibiców
+#define SIGNAL_EVACUATE 3 // sygnał do ewakuacji stadionu
 
-key_t q_key;
-int msg_id;
+key_t q_key; // deklaracja klucza do kolejki komunikatów
+int msg_id; // deklaracja zmiennej do kolejki komunikatów
 
 struct bufor message;
 
-int recive_PID_message();
-void recive_end_message();
-void print_menu();
-int initialize_resources();
+void recive_end_message(); // odbiera wiadomość końcową od pracownika technicznego po opuszczeniu stadionu przez kibiców
+void print_menu(); // wyświetla menu w terminalu
+int initialize_resources(); // inicjalizuje zasoby
 
 int main() {
     int PID_worker = initialize_resources(); // pobranie PID-u pracownika technicznego do wysłania sygnałów
     int signal = -1;
 
-    print_menu(); // wyswietlenie menu
+    print_menu(); // wyświetlenie menu
 
     while (1) {
         printf("\nPodaj nr sygnału: ");
-        if (scanf("%d", &signal) != 1 || signal < 0) // pobranie od uzytkownika sygnału
+        if (scanf("%d", &signal) != 1 || signal < 0) // pobranie od użytkownika sygnału
         {
             printf("Błąd: Wprowadź poprawny numer sygnału.\n");
             while (getchar() != '\n'); // Czyszczenie bufora wejściowego
@@ -40,13 +39,13 @@ int main() {
         int result = -1;
         switch (signal) {
             case SIGNAL_STOP:
-                result = kill(PID_worker, SIGUSR1); // pracownik techniczny wstzymauje wpuszczenie kibicow na stadion(sygnal1)
+                result = kill(PID_worker, SIGUSR1); // pracownik techniczny wstrzymuje wpuszczenie kibiców na stadion(sygnał1)
                 break;
             case SIGNAL_RESUME:
-                result = kill(PID_worker, SIGUSR2); // pracownik techniczny wznawia wpuszczanie kibiców na stadion (sygnal2)
+                result = kill(PID_worker, SIGUSR2); // pracownik techniczny wznawia wpuszczanie kibiców na stadion (sygnał2)
                 break;
             case SIGNAL_EVACUATE:
-                result = kill(PID_worker, SIGTERM); // wszyscy kibice opszuczaja stadion (koniec symulacji) (sygnal3)
+                result = kill(PID_worker, SIGTERM); // wszyscy kibice opuszczają stadion (koniec symulacji) (sygnał3)
                 break;
         }
         // obsługa błędu sygnału
@@ -62,7 +61,7 @@ int main() {
             break;
         }
     }
-    recive_end_message(); // otrzymanie widomosci konczacej
+    recive_end_message(); // otrzymanie wiadomości kończącej
     return 0;
 }
 
@@ -81,6 +80,6 @@ void recive_end_message() {
 int initialize_resources() {
     q_key = initialize_key('D'); // inicjalizacja klucza do kolejki komunikatów
     msg_id = initialize_message_queue(q_key); // inicjalizacja kolejki komunikatów do odbierania wiadomości
-    receive_message(msg_id, &message, MANAGER); // odebranie wiadomośći z PID-em pracownika techniczengo
+    receive_message(msg_id, &message, MANAGER); // odebranie wiadomości z PID-em pracownika technicznego
     return message.mvalue; // zwrócenie PID-u pracownika technicznego
 }

@@ -15,6 +15,7 @@ sem_t child_semaphore; // Deklaracja semafora dla watków
 struct Stadium *stadium;
 struct Fan fan;
 struct bufor message;
+
 // wątek dziecka
 pthread_t id_child;
 
@@ -30,13 +31,13 @@ void finalize_station(int i, int *station); // Finalizacja zajmowania stanowiska
 void handle_exit(); // Obsługa wyjścia fana ze stadionu
 void *child(void *arg); // Obsługa dziecka w przypadku, gdy kibic jest z dzieckiem
 void wait_for_entry(); // Oczekiwanie na odblokowanie wejścia na stadion
-void check_passes (); // sprawdza czy kibic przepuscił już 5 kibiców
+void check_passes (); // sprawdza czy kibic przepuścił już 5 kibiców
 void enter_stadium(); // wpuszcza kibiców na stadion
 // Funkcja główna
 int main() {
     initialize_resources(); // Inicjalizacja zasobów IPC
     generate_fan_attributes(); // Generowanie losowych atrybutów fana
-    check_stadium_full(); // sprawdznie czy stadion jest pełny
+    check_stadium_full(); // sprawdzenie czy stadion jest pełny
 
     int station = 0; // flaga do znalezienia stanowiska
 
@@ -46,8 +47,8 @@ int main() {
     }
     // Szukanie wolnego stanowiska do kontroli
     while (station == 0) {
-        check_passes(); // sprawdzenie czy kibic przpusił już 5 innych
-        try_to_find_station(&station); // proba znalezienia odpowiedznie stacji kontroli
+        check_passes(); // sprawdzenie czy kibic przepuścił już 5 innych
+        try_to_find_station(&station); // proba znalezienia odpowiedniej stacji kontroli
     }
 
     wait_for_entry(); // Oczekiwanie na pozwolenie na wejście
@@ -58,6 +59,7 @@ int main() {
 
     handle_exit(); // Obsługa wyjścia kibica ze stadionu
 
+    // odłączanie wątku dziecka jeżeli kibic je posiada
     if (fan.has_child) {
         if (pthread_detach(id_child) == -1) {
             printf( "Error detaching a thread\n");
@@ -70,7 +72,7 @@ int main() {
 // Funkcja generująca losowe atrybuty fana
 void generate_fan_attributes() {
     srand(getpid());
-    receive_message(msg_id, &message, FAN); // odbior komunikatu z ID kibica
+    receive_message(msg_id, &message, FAN); // odbiór komunikatu z ID kibica
     fan.id = message.mvalue; // Ustawienie unikalnego ID fana
     fan.dangerous_item = (rand() % 100) < 5 ? 1 : 0; // 5% szansa na posiadanie niebezpiecznego przedmiotu
     fan.is_vip = (rand() % K < VIP) ? 1 : 0; // VIP z prawdopodobieństwem określonym przez stałą VIP
@@ -79,7 +81,7 @@ void generate_fan_attributes() {
     fan.has_child = (rand() % 100) < 15 ? 1 : 0; // 15% szansa, że kibic ma dziecko
 
     wait_semaphore(m_sem_id, 0, 0);  // Zablokowanie dostępu do pamięci współdzielonej
-    stadium->passing_counter[fan.id % K] = 0; // ustawienia licznika przepuszczen na 0
+    stadium->passing_counter[fan.id % K] = 0; // ustawienia licznika przepuszczeń na 0
     signal_semaphore(m_sem_id, 0); // Zwolnienie dostępu do pamięci współdzielonej
 
     // Jeśli kibic ma dziecko, uruchamiany jest osobny wątek
@@ -104,7 +106,7 @@ void initialize_resources() {
     sem_id = allocate_semaphore(s_key, NUM_STATIONS); // Alokacja semaforów stanowisk
     shm_id = initialize_shared_memory(m_key, sizeof(struct Stadium)); // Inicjalizacja pamięci współdzielonej
     m_sem_id = allocate_semaphore(m_s_key, 1); // Alokacja semafora pamięci współdzielonej
-    msg_id = initialize_message_queue(q_key); // inicjaliozacja kolejki komunikatów
+    msg_id = initialize_message_queue(q_key); // inicjalizacja kolejki komunikatów
     exit_sem_id = allocate_semaphore(exit_s_key, 1); // Alokacja semafora wyjścia
     vip_exit_sem_id = allocate_semaphore(vip_exit_key, 1); // Alokacja semafora wyjścia VIP
 
@@ -116,22 +118,22 @@ void initialize_resources() {
 }
 void check_passes() {
     wait_semaphore(m_sem_id, 0, 0); // Zablokowanie dostępu do pamięci współdzielonej
-    // sprawdzenie czy kibic przpepusił już 5 lub wiecej kibiców
+    // sprawdzenie czy kibic przepuścił już 5 lub więcej kibiców
     if (!fan.has_child) {
         if (stadium->passing_counter[fan.id % K] >= 5) {
-            printf("Kibic %d: drużyny: %d stał się agresywny nie może wejśc na stadion\n", fan.id, fan.team);
+            printf("Kibic %d: drużyny: %d stał się agresywny, nie może wejść na stadion\n", fan.id, fan.team);
             signal_semaphore(m_sem_id, 0); // Zwolnienie dostępu do pamięci współdzielonej
-            detach_shared_memory(stadium); // odłaczenie pamieci wpołdzieloej
+            detach_shared_memory(stadium); // odłączenie pamięci współdzielonej
             exit(0);
         }
     } else {
         if (stadium->passing_counter[fan.id % K] >= 5) {
-            printf("Kibic %d: drużyny: %d z dzieckiem stał się agresywny nie mogą wejśc na stadion\n", fan.id, fan.team);
+            printf("Kibic %d: drużyny: %d z dzieckiem stał się agresywny, nie mogą wejść na stadion\n", fan.id, fan.team);
             signal_semaphore(m_sem_id, 0); // Zwolnienie dostępu do pamięci współdzielonej
-            detach_shared_memory(stadium);// odłaczenie pamieci wpołdzieloej
-            //odłaczenie watku dziecka
+            detach_shared_memory(stadium); // odłączenie pamięci współdzielonej
+            // odłączenie wątku dziecka
             if (pthread_detach(id_child) == -1) {
-                printf( "Error detaching a thread\n");
+                printf("Error detaching a thread\n");
                 exit(1);
             }
             exit(0);
@@ -161,7 +163,7 @@ int try_to_enter_station(int i, int *station) {
     if (stadium->station_status[i] == 0 || stadium->station_status[i] == fan.team) {
         stadium->station_status[i] = fan.team; // Przypisanie drużyny do stanowiska
 
-        // zwiekszenie ilosci przepuszen poprzednich 5 kibicow
+        // zwiększenie ilości przepuszczeń poprzednich 5 kibiców
         for (int i = 1; i <= 5; i++) {
             int poprzedni_indeks = (fan.id - i + K) % K;
             stadium->passing_counter[poprzedni_indeks]++;
@@ -173,7 +175,7 @@ int try_to_enter_station(int i, int *station) {
             wait_semaphore(sem_id, i, 0); // Zajęcie stanowiska przez rodzica
             wait_semaphore(sem_id, i, 0); // Zajęcie stanowiska przez dziecko
         }
-        signal_semaphore(m_sem_id, 0);
+        signal_semaphore(m_sem_id, 0); // Zwolnienie dostępu do pamięci współdzielonej
 
         check_stadium_full(); // Sprawdzenie, czy stadion nie jest pełny
 
@@ -236,7 +238,6 @@ void perform_control(int i) {
                 fan.id);
             signal_semaphore(sem_id, i); // zwolnienie stanowiska do kontroli przez rodzica
             signal_semaphore(sem_id, i); // zwolnienie stanowiska do kontroli przez dziecko
-            detach_shared_memory(stadium);
             if (pthread_detach(id_child) == -1) {
                 printf( "Error detaching a thread\n");
                 exit(1);
@@ -244,7 +245,7 @@ void perform_control(int i) {
             exit(0);
         }
     }
-     sleep(rand()%10); // symulacja kontroli
+     sleep(rand()%20); // symulacja kontroli
 }
 
 // Funkcja finalizująca zajęcie stanowiska
@@ -259,7 +260,7 @@ void finalize_station(int i, int *station) {
     signal_semaphore(m_sem_id, 0); // Zwolnienie dostępu do pamięci współdzielonej
 
     wait_semaphore(m_sem_id, 0, 0); // Zablokowanie dostępu do pamięci współdzielonej
-    // jeżli stanowisko jest puste to może wejść kibic dowolnej drużyny
+    // jeżeli stanowisko jest puste to może wejść kibic dowolnej drużyny
     if (value_semaphore(sem_id, i) == 3) {
         stadium->station_status[i] = 0; // "czyszczenie stanowiska z statusu drużyny"
     }
@@ -299,7 +300,7 @@ void enter_stadium() {
 // Funkcja obsługująca wyjście fana
 void handle_exit() {
     if (fan.is_vip) {
-        wait_semaphore(vip_exit_sem_id, 0, 0);
+        wait_semaphore(vip_exit_sem_id, 0, 0); // zablokowanie dostępu do wyjścia VIP ze stadionu
         printf("Kibic %d: Drużyny: %d VIP status: %d wychodzi ze stadionu wejściem VIP\n", fan.id, fan.team,
                fan.is_vip);
         // dziecko wychodzi razem z rodzicem
@@ -311,19 +312,19 @@ void handle_exit() {
                 exit(1);
             }
         }
-        signal_semaphore(vip_exit_sem_id, 0);
+        signal_semaphore(vip_exit_sem_id, 0); // zwolnienie dostępu do wyjścia VIP ze stadionu
     } else {
-        wait_semaphore(exit_sem_id, 0, 0);
+        wait_semaphore(exit_sem_id, 0, 0); // zablokowanie dostępu do wyjścia ze stadionu
         printf("Kibic %d: Drużyny: %d VIP status: %d wychodzi ze stadionu\n", fan.id, fan.team, fan.is_vip);
         // dziecko wychodzi razem z rodzicem
         if (fan.has_child) {
-            sem_post(&child_semaphore);
+            sem_post(&child_semaphore); // zwolnienie semafora dla watków
             if (pthread_join(id_child,NULL) == -1) {
                 printf( "Error joining a thread\n");
                 exit(1);
             }
         }
-        signal_semaphore(exit_sem_id, 0);
+        signal_semaphore(exit_sem_id, 0); // zwolnienie dostępu do wyjścia ze stadionu
     }
 }
 

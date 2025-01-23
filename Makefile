@@ -1,13 +1,13 @@
 # Ustawienia kompilatora
 CC = gcc
-CFLAGS = -std=c2x -Wall -Wextra -pedantic
+CFLAGS = -std=c1x -Wall -Wextra -pedantic -pthread
 
-# Ścieżki
+# sciezki
 SRC_DIR = src
 BIN_DIR = bin
 INCLUDE_DIR = include
 
-# Pliki źródłowe
+# Pliki zrodlowe
 PRACOWNIK_TECHNICZNY = $(SRC_DIR)/pracownik_techniczny.c
 RESOURCES = $(SRC_DIR)/resources.c
 KIBIC = $(SRC_DIR)/kibic.c
@@ -18,7 +18,7 @@ KIBIC_BIN = $(BIN_DIR)/kibic
 PRACOWNIK_BIN = $(BIN_DIR)/pracownik_techniczny
 KIEROWNIK_BIN = $(BIN_DIR)/kierownik_stadionu
 
-# Cele główne
+# Cele glowne
 all: $(KIBIC_BIN) $(PRACOWNIK_BIN) $(KIEROWNIK_BIN)
 
 # Kompilacja kibic
@@ -36,7 +36,7 @@ $(KIEROWNIK_BIN): $(KIEROWNIK) $(RESOURCES)
 	@mkdir -p $(BIN_DIR)
 	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) $^ -o $@
 
-# Uruchamianie programów w osobnych terminalach
+# Uruchamianie programow w osobnych terminalach
 run: all
 	@echo "Uruchamianie pracownik_techniczny w osobnym terminalu..."
 	gnome-terminal -- bash -c "./$(BIN_DIR)/pracownik_techniczny; exec bash" &
@@ -45,7 +45,7 @@ run: all
 
 # Czyszczenie
 clean:
-	@echo "Usuwanie plików wykonywalnych..."
+	@echo "Usuwanie plikow wykonywalnych..."
 	rm -rf $(BIN_DIR)
 
 .PHONY: all clean run

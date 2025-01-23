@@ -23,16 +23,19 @@
 #include <signal.h> // Obsługa sygnałów
 #include <pthread.h> // Obsługa wątków
 #include <semaphore.h> // obsługa semaforów dla wątków
-
+#include <stdarg.h>
+#include <sys/time.h>
+#define MAX_PROCESSES 4000
 #define NUM_STATIONS 3  // ilosc stanowiski do kontroli kibicow
 #define MAX_NUM_FANS 3 // maksymalna ilosc kibicow na jednym stanowisku do kontroli
-#define K 7900 // maksymalna ilosc kibicow ktorzy moga przebywac na stadionie
+#define K 4000 // maksymalna ilosc kibicow ktorzy moga przebywac na stadionie
 // podzial na druzyny
 #define TEAM_A 2
 #define TEAM_B 1
 #define FAN 1 // typ komunikatu dla kibica
 #define MANAGER 2 // typ komunikatu dla kierownika
 #define VIP (K * 0.005) // szansa na zostanie kibicem VIP
+
 
 // struktura opisujaca kibica
 struct Fan {
@@ -88,4 +91,5 @@ int initialize_shared_memory(key_t key, int size);
 void release_shared_memory(int shm_ID);
 
 void detach_shared_memory(const void *addr);
+
 #endif //RESOURCES_H

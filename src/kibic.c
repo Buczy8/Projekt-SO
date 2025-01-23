@@ -18,6 +18,7 @@ struct bufor message;
 // wątek dziecka
 pthread_t id_child;
 
+
 // Deklaracje funkcji
 void initialize_resources(); // Inicjalizacja zasobów IPC
 void generate_fan_attributes(); // Generowanie losowych atrybutów fana
@@ -31,7 +32,6 @@ void *child(void *arg); // Obsługa dziecka w przypadku, gdy kibic jest z dzieck
 void wait_for_entry(); // Oczekiwanie na odblokowanie wejścia na stadion
 void check_passes (); // sprawdza czy kibic przepuscił już 5 kibiców
 void enter_stadium(); // wpuszcza kibiców na stadion
-
 // Funkcja główna
 int main() {
     initialize_resources(); // Inicjalizacja zasobów IPC
@@ -60,7 +60,7 @@ int main() {
 
     if (fan.has_child) {
         if (pthread_detach(id_child) == -1) {
-            fprintf(stderr, "Error detaching a thread\n");
+            printf( "Error detaching a thread\n");
             exit(1);
         }
     }
@@ -86,7 +86,7 @@ void generate_fan_attributes() {
     if (fan.has_child) {
         sem_init(&child_semaphore, 0, 0);
         if (pthread_create(&id_child, NULL, child, NULL) == -1) {
-            fprintf(stderr, "Error creating a thread\n");
+            printf( "Error creating a thread\n");
             exit(1);
         }
     }
@@ -119,19 +119,19 @@ void check_passes() {
     // sprawdzenie czy kibic przpepusił już 5 lub wiecej kibiców
     if (!fan.has_child) {
         if (stadium->passing_counter[fan.id % K] >= 5) {
-            printf("Kibic: %d stał się agresywny nie może wejśc na stadion\n", fan.id);
+            printf("Kibic %d: drużyny: %d stał się agresywny nie może wejśc na stadion\n", fan.id, fan.team);
             signal_semaphore(m_sem_id, 0); // Zwolnienie dostępu do pamięci współdzielonej
             detach_shared_memory(stadium); // odłaczenie pamieci wpołdzieloej
             exit(0);
         }
     } else {
         if (stadium->passing_counter[fan.id % K] >= 5) {
-            printf("Kibic: %d z dzieckiem stał się agresywny nie mogą wejśc na stadion\n", fan.id);
+            printf("Kibic %d: drużyny: %d z dzieckiem stał się agresywny nie mogą wejśc na stadion\n", fan.id, fan.team);
             signal_semaphore(m_sem_id, 0); // Zwolnienie dostępu do pamięci współdzielonej
             detach_shared_memory(stadium);// odłaczenie pamieci wpołdzieloej
             //odłaczenie watku dziecka
             if (pthread_detach(id_child) == -1) {
-                fprintf(stderr, "Error detaching a thread\n");
+                printf( "Error detaching a thread\n");
                 exit(1);
             }
             exit(0);
@@ -193,7 +193,7 @@ void check_stadium_full() {
     if (!fan.has_child) {
         if (stadium->fans >= K) {
             // Sprawdzenie, czy liczba kibiców osiągnęła limit
-            printf("Stadion jest pełny. Kibic %d nie może wejść.\n", fan.id);
+            printf("Kibic %d: drużyny: %d nie może wejść. Stadion jest pełny.\n", fan.id, fan.team);
             detach_shared_memory(stadium); // Odłączenie pamięci współdzielonej
             signal_semaphore(m_sem_id, 0); // Zwolnienie dostępu do pamięci współdzielonej
             exit(0); // Wyjście z procesu
@@ -201,11 +201,11 @@ void check_stadium_full() {
     } else {
         if (stadium->fans >= K - 1) {
             // Sprawdzenie, czy liczba kibiców osiągnęła limit
-            printf("Stadion jest pełny. Kibic %d z dzieckiem nie może wejść.\n", fan.id);
+            printf("Kibic %d drużyny: %d z dzieckiem nie może wejść. Stadion jest pełny.\n", fan.id, fan.team);
             detach_shared_memory(stadium); // Odłączenie pamięci współdzielonej
             signal_semaphore(m_sem_id, 0); // Zwolnienie dostępu do pamięci współdzielonej
             if (pthread_detach(id_child) == -1) {
-                fprintf(stderr, "Error detaching a thread\n");
+                printf( "Error detaching a thread\n");
                 exit(1);
             }
             exit(0); // Wyjście z procesu
@@ -230,7 +230,7 @@ void perform_control(int i) {
         printf("Dziecko kibica: %d Rozpoczęcie kontroli z na stanowisku %d.\n", fan.id, i);
 
         if (fan.dangerous_item == 1) {
-            printf("Kibic %d: posiada niebezpieczny przedmiot. Nie wchodzi na stadion.\n", fan.id);
+            printf("Kibic %d: Drużyny: %d posiada niebezpieczny przedmiot. Nie wchodzi na stadion.\n", fan.id,fan.team);
             printf(
                 "Dziecko kibica: %d Nie wchodzi na stadion. Rodzic posiada niebezpieczny przedmiot, nie może wejść na stadion samo\n",
                 fan.id);
@@ -238,13 +238,13 @@ void perform_control(int i) {
             signal_semaphore(sem_id, i); // zwolnienie stanowiska do kontroli przez dziecko
             detach_shared_memory(stadium);
             if (pthread_detach(id_child) == -1) {
-                fprintf(stderr, "Error detaching a thread\n");
+                printf( "Error detaching a thread\n");
                 exit(1);
             }
             exit(0);
         }
     }
-    sleep(rand() % 10); // symulacja kontroli
+     sleep(rand()%10); // symulacja kontroli
 }
 
 // Funkcja finalizująca zajęcie stanowiska
@@ -307,7 +307,7 @@ void handle_exit() {
             sem_post(&child_semaphore); // zwolnienie semafora dla watków
             // dolaczenie watku dziecka
             if (pthread_join(id_child,NULL) == -1) {
-                fprintf(stderr, "Error joining a thread\n");
+                printf( "Error joining a thread\n");
                 exit(1);
             }
         }
@@ -319,7 +319,7 @@ void handle_exit() {
         if (fan.has_child) {
             sem_post(&child_semaphore);
             if (pthread_join(id_child,NULL) == -1) {
-                fprintf(stderr, "Error joining a thread\n");
+                printf( "Error joining a thread\n");
                 exit(1);
             }
         }

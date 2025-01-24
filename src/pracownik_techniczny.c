@@ -48,7 +48,6 @@ int main() {
         signal_semaphore(m_sem_id, 0); // zwolnienie semafora po użyciu pamięci współdzielonej
         if (stop_letting_in) {
             // Symulacja stanu "wstrzymano wpuszczanie"
-            usleep(100000); // sprawdza warunek co 100 mikrosekund żeby nie obciążać procesora za bardzo
         } else {
             // Symulacja normalnej pracy
             // wysłanie komunikatu do kibica którym jest z rzędu

@@ -1,0 +1,4 @@
+[2025-01-22 16:23:57] Pracownik techniczny: Rozpoczęto ewakuację stadionu.
+
+[2025-01-22 16:23:57] Pracownik techniczny 0: Liczba kibiców na stadionie -1879703049
+

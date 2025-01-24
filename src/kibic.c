@@ -81,7 +81,7 @@ void generate_fan_attributes() {
     fan.has_child = (rand() % 100) < 15 ? 1 : 0; // 15% szansa, że kibic ma dziecko
 
     wait_semaphore(m_sem_id, 0, 0);  // Zablokowanie dostępu do pamięci współdzielonej
-    stadium->passing_counter[fan.id % K] = 0; // ustawienia licznika przepuszczeń na 0
+    stadium->passing_counter[fan.id] = 0; // ustawienia licznika przepuszczeń na 0
     signal_semaphore(m_sem_id, 0); // Zwolnienie dostępu do pamięci współdzielonej
 
     // Jeśli kibic ma dziecko, uruchamiany jest osobny wątek
@@ -120,14 +120,14 @@ void check_passes() {
     wait_semaphore(m_sem_id, 0, 0); // Zablokowanie dostępu do pamięci współdzielonej
     // sprawdzenie czy kibic przepuścił już 5 lub więcej kibiców
     if (!fan.has_child) {
-        if (stadium->passing_counter[fan.id % K] >= 5) {
+        if (stadium->passing_counter[fan.id ] > 5) {
             printf("Kibic %d: drużyny: %d stał się agresywny, nie może wejść na stadion\n", fan.id, fan.team);
             signal_semaphore(m_sem_id, 0); // Zwolnienie dostępu do pamięci współdzielonej
             detach_shared_memory(stadium); // odłączenie pamięci współdzielonej
             exit(0);
         }
     } else {
-        if (stadium->passing_counter[fan.id % K] >= 5) {
+        if (stadium->passing_counter[fan.id ] > 5) {
             printf("Kibic %d: drużyny: %d z dzieckiem stał się agresywny, nie mogą wejść na stadion\n", fan.id, fan.team);
             signal_semaphore(m_sem_id, 0); // Zwolnienie dostępu do pamięci współdzielonej
             detach_shared_memory(stadium); // odłączenie pamięci współdzielonej
@@ -164,9 +164,8 @@ int try_to_enter_station(int i, int *station) {
         stadium->station_status[i] = fan.team; // Przypisanie drużyny do stanowiska
 
         // zwiększenie ilości przepuszczeń poprzednich 5 kibiców
-        for (int i = 1; i <= 5; i++) {
-            int poprzedni_indeks = (fan.id - i + K) % K;
-            stadium->passing_counter[poprzedni_indeks]++;
+        for (int i = 0; i <= fan.id; i++) {
+            stadium->passing_counter[i]++;
         }
         signal_semaphore(m_sem_id, 0); // Zwolnienie dostępu do pamięci współdzielonej
         if (!fan.has_child) {
@@ -228,8 +227,8 @@ void perform_control(int i) {
             exit(0);
         }
     } else {
-        printf("Kibic %d: Drużyny: %d Rozpoczęcie kontroli z na stanowisku %d.\n", fan.id, fan.team, i);
-        printf("Dziecko kibica: %d Rozpoczęcie kontroli z na stanowisku %d.\n", fan.id, i);
+        printf("Kibic %d: Drużyny: %d Rozpoczęcie kontroli na stanowisku %d.\n", fan.id, fan.team, i);
+        printf("Dziecko kibica: %d Rozpoczęcie kontroli na stanowisku %d.\n", fan.id, i);
 
         if (fan.dangerous_item == 1) {
             printf("Kibic %d: Drużyny: %d posiada niebezpieczny przedmiot. Nie wchodzi na stadion.\n", fan.id,fan.team);
@@ -245,7 +244,7 @@ void perform_control(int i) {
             exit(0);
         }
     }
-     sleep(rand()%20); // symulacja kontroli
+     sleep(rand()%10); // symulacja kontroli
 }
 
 // Funkcja finalizująca zajęcie stanowiska

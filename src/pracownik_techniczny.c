@@ -48,6 +48,7 @@ int main() {
         signal_semaphore(m_sem_id, 0); // zwolnienie semafora po użyciu pamięci współdzielonej
         if (stop_letting_in) {
             // Symulacja stanu "wstrzymano wpuszczanie"
+            usleep(1);
         } else {
             // Symulacja normalnej pracy
             // wysłanie komunikatu do kibica którym jest z rzędu
@@ -185,7 +186,7 @@ void creat_fan() {
     }
     // sprawdzenie czy ilość procesów nie przekroczyła maksymalnej wartości
     if (processes > MAX_PROCESSES) {
-        fprintf(stderr, "Osiągnięto maksymlną liczbe procesów, koniec programu\n");
+        fprintf(stderr, "Osiągnięto maksymlną liczbe procesów\n");
             terminate_kibic_processes(); // zabicie wszystkich procesów kibica
             release_resources(); // zwolnienie zasobów
             exit(1);
@@ -198,32 +199,24 @@ void creat_fan() {
         terminate_kibic_processes(); // Zakończenie procesów kibiców
         exit(1);
         case 0:
-            processes++; // Zwiększenie liczby procesów
         if (execl("./kibic", "./kibic", (char *) NULL) == -1) {
             perror("exec error\n");
             exit(1);
         }
         exit(0);
+        default:
+            processes++; // zwieszenie liczby procesów
     }
 }
 void terminate_kibic_processes() {
     int status;
-    // Uruchomienie polecenia pkill do usuwania procesów kibiców
-    fp = popen("pkill -f ./kibic", "r");
-    // obsługa błędu
-    if (fp == NULL) {
-        perror("Failed to run pkill command");
-       exit(1);
-    }
+    // Wykonanie polecenia systemowego pkill
+    status = system("pkill -f ./kibic");
 
-    // Sprawdzenie statusu zakończenia polecenia
-    status = pclose(fp);
+    // Sprawdzenie statusu wykonania polecenia
     if (status == -1) {
-        perror("Failed to close pkill command stream");
-    } else if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
-        printf("All kibic processes terminated successfully.\n");
-    } else {
-        printf("Failed to terminate kibic processes.\n");
+        perror("Failed to execute pkill command");
+        exit(1);
     }
 }
 

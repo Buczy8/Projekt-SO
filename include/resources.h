@@ -43,7 +43,6 @@ struct Fan {
     int team; // 2 - drużyna A, 1 - drużyna B
     bool dangerous_item; // posiadanie niebezpiecznego przedmiotu
     bool is_vip; // status VIP
-    int age; // wiek kibica
     bool has_child; // posiadanie dziecka
 };
 
@@ -52,7 +51,7 @@ struct Stadium {
     int station_status[NUM_STATIONS]; // Tablica statusów stanowisk (0 - wolne, TEAM_A/TEAM_B - zajęte)
     int entry_status; // status wchodzenia na stadion
     int exit_status; // status opuszczania stadionu
-    int passing_counter[K]; // licznik przepuszczeń przez kibica
+    int passing_counter[MAX_PROCESSES]; // licznik przepuszczeń przez kibica
 };
 
 //operacje semaforowe

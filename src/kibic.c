@@ -77,7 +77,6 @@ void generate_fan_attributes() {
     fan.dangerous_item = (rand() % 100) < 5 ? 1 : 0; // 5% szansa na posiadanie niebezpiecznego przedmiotu
     fan.is_vip = (rand() % K < VIP) ? 1 : 0; // VIP z prawdopodobieństwem określonym przez stałą VIP
     fan.team = (rand() % 2) == 0 ? TEAM_A : TEAM_B; // Przypisanie fana do drużyny
-    fan.age = (rand() % 100) + 1; // Losowy wiek fana
     fan.has_child = (rand() % 100) < 15 ? 1 : 0; // 15% szansa, że kibic ma dziecko
 
     wait_semaphore(m_sem_id, 0, 0);  // Zablokowanie dostępu do pamięci współdzielonej
